@@ -1,26 +1,46 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Brand Colors - Blue Iris */
+  --color-iris-50: #eef2ff;
+  --color-iris-100: #c5d5f8;
+  --color-iris-200: #8aaef1;
+  --color-iris-300: #4d82e8;
+  --color-iris-500: #1a56db;
+  --color-iris-600: #1240b0;
+  --color-iris-800: #0c2e84;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Semantic Colors */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+  --color-accent: #7c3aed;
+
+  /* Neutral Colors */
+  --color-ink: #0d1117;
+  --color-ink2: #374151;
+  --color-muted: #6b7280;
+  --color-hint: #9ca3af;
+  --color-surface: #ffffff;
+  --color-surface2: #f8f9fc;
+  --color-surface3: #f1f4fb;
+  --color-border: #e5e9f2;
+
+  /* Typography */
+  --font-sans: var(--font-dm-sans);
+  --font-mono: var(--font-dm-mono);
+
+  /* Spacing tokens */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
 }
