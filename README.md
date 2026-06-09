@@ -380,51 +380,9 @@ Memberikan insight bagi dosen dan admin terkait performa akademik.
 | Storage  | Supabase Storage (file upload)         |
 | Auth     | Supabase Auth + Zustand session store  |
 
-### Documentation (Product Development Life Cycle)
-
-| Dokumen                                     | File                                                      | Status |
-| ------------------------------------------- | --------------------------------------------------------- | ------ |
-| Business Requirements Document (BRD)        | `Product Development Life Cycle/01_BRD.md`                | ✅     |
-| Product Requirements Document (PRD)         | `Product Development Life Cycle/02_PRD.md`                | ✅     |
-| Functional Requirements Document (FRD)      | `Product Development Life Cycle/03_FRD.md`                | ✅     |
-| Software Requirements Spec (SRS) + Diagrams | `Product Development Life Cycle/04_SRS.md`                | ✅     |
-| UI/UX Design System                         | `Product Development Life Cycle/05_UIUX_Design_System.md` | ✅     |
-| Progress Report                             | `Product Development Life Cycle/06_Progress.md`           | ✅     |
-| Database Design + DDL SQL                   | `Product Development Life Cycle/07_Database_Design.md`    | ✅     |
-| Testing Plan                                | `Product Development Life Cycle/08_Testing_Plan.md`       | ✅     |
-
-> Use Case Diagram, Activity Diagram, Sequence Diagram, dan ERD tersedia sebagai Mermaid diagrams di dalam `04_SRS.md`.
-
 ---
 
-## 11. Database Planning
-
-### Core Entities
-
-| Entitas           | Keterangan                         |
-| ----------------- | ---------------------------------- |
-| `User`            | Semua pengguna sistem + role field |
-| `Course`          | Mata kuliah                        |
-| `Enrollment`      | Pendaftaran mahasiswa ke course    |
-| `Module`          | Modul / materi per pertemuan       |
-| `Assignment`      | Penugasan                          |
-| `Submission`      | Hasil pengumpulan tugas            |
-| `Quiz`            | Kuis / UTS / UAS                   |
-| `Question`        | Soal kuis                          |
-| `QuizAttempt`     | Hasil pengerjaan kuis mahasiswa    |
-| `Attendance`      | Absensi per minggu                 |
-| `Grade`           | Rekap nilai akhir per mata kuliah  |
-| `Discussion`      | Thread forum diskusi               |
-| `DiscussionReply` | Balasan thread forum               |
-| `Announcement`    | Pengumuman kelas                   |
-| `Notification`    | Notifikasi personal pengguna       |
-| `CalendarEvent`   | Agenda akademik                    |
-
-> Detail struktur tabel, DDL SQL script, constraints, dan seed data tersedia di `Product Development Life Cycle/07_Database_Design.md`.
-
----
-
-## 12. Portfolio Positioning
+## 11. Portfolio Positioning
 
 Karena proyek ini bersifat **frontend showcase**, fokus utama meliputi:
 
@@ -436,7 +394,7 @@ Karena proyek ini bersifat **frontend showcase**, fokus utama meliputi:
 
 ---
 
-## 13. Final Deliverables
+## 12. Final Deliverables
 
 - [x] Interactive LMS Prototype
 - [x] Responsive Web Interface
@@ -447,7 +405,7 @@ Karena proyek ini bersifat **frontend showcase**, fokus utama meliputi:
 
 ---
 
-## 14. Success Criteria
+## 13. Success Criteria
 
 Prototype dianggap **berhasil** jika mampu:
 
