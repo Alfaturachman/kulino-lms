@@ -2,7 +2,7 @@
 
 ## KULINO — Interface Specification & Design Guide
 
-**Versi:** 1.0 | **Style:** Modern SaaS · Minimalis · Card-Based Flat 2.0
+**Versi:** 1.1 | **Style:** Modern SaaS · Minimalis · Card-Based Flat 2.0
 
 ---
 
@@ -327,13 +327,13 @@ Menggunakan **Lucide React** sebagai icon library utama.
 
 ## 12. Accessibility Checklist
 
-- [ ] Semua gambar memiliki `alt` text yang deskriptif
-- [ ] Semua form input memiliki `<label>` yang terhubung
-- [ ] Contrast ratio teks ≥ 4.5:1 (normal), ≥ 3:1 (large)
-- [ ] Focus ring terlihat jelas di semua interactive element
-- [ ] Keyboard navigable: Tab order logis, Enter untuk submit
-- [ ] ARIA labels untuk icon-only buttons
-- [ ] Skip-to-content link di awal halaman
-- [ ] Error messages terhubung dengan `aria-describedby`
-- [ ] Tidak ada informasi yang hanya disampaikan lewat warna
-- [ ] Animated content menghormati `prefers-reduced-motion`
+- [x] Semua gambar memiliki `alt` text yang deskriptif
+- [x] Semua form input memiliki `<label>` yang terhubung
+- [x] Contrast ratio teks ≥ 4.5:1 (normal), ≥ 3:1 (large)
+- [x] Focus ring terlihat jelas di semua interactive element
+- [x] Keyboard navigable: Tab order logis, Enter untuk submit
+- [x] ARIA labels untuk icon-only buttons
+- [x] Skip-to-content link di awal halaman
+- [x] Error messages terhubung dengan `aria-describedby`
+- [x] Tidak ada informasi yang hanya disampaikan lewat warna
+- [x] Animated content menghormati `prefers-reduced-motion`

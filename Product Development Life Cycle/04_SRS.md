@@ -2,7 +2,7 @@
 
 ## KULINO — Spesifikasi Sistem & Arsitektur
 
-**Versi:** 1.0 | **Tipe:** Technical Spec | **Stack:** Next.js + React + Tailwind
+**Versi:** 1.1 | **Tipe:** Technical Spec | **Stack:** Next.js + React + Tailwind CSS v4
 
 ---
 
@@ -10,12 +10,12 @@
 
 ### Frontend Framework
 
-| Teknologi    | Versi           | Fungsi                  |
-| ------------ | --------------- | ----------------------- |
-| Next.js      | 14 (App Router) | Framework utama SSR/SSG |
-| React        | 18              | UI component library    |
-| TypeScript   | 5.x             | Type safety             |
-| Tailwind CSS | v3              | Utility-first styling   |
+| Teknologi    | Versi             | Fungsi                                 |
+| ------------ | ----------------- | -------------------------------------- |
+| Next.js      | 15.x (App Router) | Framework utama SSR/SSG                |
+| React        | 19.x              | UI component library                   |
+| TypeScript   | 5.x               | Type safety                            |
+| Tailwind CSS | v4 (CSS-first)    | Utility-first styling (no config file) |
 
 ### UI & Component Library
 
@@ -28,12 +28,12 @@
 
 ### State Management & Forms
 
-| Library         | Fungsi                    |
-| --------------- | ------------------------- |
-| Zustand         | Global state management   |
-| Context API     | Auth state (user session) |
-| React Hook Form | Form handling             |
-| Zod             | Schema validation         |
+| Library         | Versi | Fungsi                    |
+| --------------- | ----- | ------------------------- |
+| Zustand         | v5    | Global state management   |
+| Context API     | —     | Auth state (user session) |
+| React Hook Form | v7    | Form handling             |
+| Zod             | v4    | Schema validation         |
 
 ### Mock Data & Simulation
 
@@ -92,7 +92,7 @@ created_at    datetime
 id            UUID
 course_id     UUID          FK → Course
 title         string
-week_no       integer       1–14
+week_no       integer       1–16  (1-7: pra-UTS, 8: UTS, 9-15: pra-UAS, 16: UAS)
 type          enum          video|pdf|link|ppt
 content_url   string
 description   text          Nullable
@@ -137,7 +137,8 @@ course_id     UUID          FK → Course
 student_id    UUID          FK → User
 enrolled_at   datetime
 status        enum          active|dropped|completed
-progress_pct  integer       0–100
+progress_pct  integer       0–100  (computed: items_done / total_items × 100)
+created_at    datetime
 ```
 
 ### Quiz
@@ -165,18 +166,45 @@ is_read       boolean       Default false
 created_at    datetime
 ```
 
-### Entitas Tambahan
+### Question
 
-| Entitas         | Relasi Utama                          |
-| --------------- | ------------------------------------- |
-| Question        | FK → Quiz                             |
-| QuizAttempt     | FK → Quiz, User                       |
-| Discussion      | FK → Course                           |
-| DiscussionReply | FK → Discussion                       |
-| Announcement    | FK → Course                           |
-| Attendance      | FK → Course, User                     |
-| Grade           | FK → Course, User (rekap nilai akhir) |
-| CalendarEvent   | FK → Course (nullable)                |
+```
+id            UUID
+quiz_id       UUID          FK → Quiz
+content       text          Isi soal
+type          enum          mcq|essay|true_false
+options       jsonb         Nullable, pilihan jawaban (MCQ)
+answer_key    text          Nullable, kunci jawaban (MCQ)
+order_no      integer       Urutan tampil soal
+```
+
+### QuizAttempt
+
+```
+id            UUID
+quiz_id       UUID          FK → Quiz
+student_id    UUID          FK → User
+started_at    datetime
+submitted_at  datetime      Nullable
+score         numeric(5,2)  Nullable, 0–100
+answers       jsonb         Jawaban mahasiswa per soal
+is_late       boolean       Default false
+```
+
+### Entitas Lain (Sudah Terdefinisi di DB Design)
+
+| Entitas         | Relasi Utama                          | Status     |
+| --------------- | ------------------------------------- | ---------- |
+| Discussion      | FK → Course                           | ✅ Selesai |
+| DiscussionReply | FK → Discussion                       | ✅ Selesai |
+| Announcement    | FK → Course                           | ✅ Selesai |
+| Attendance      | FK → Course, User                     | ✅ Selesai |
+| Grade           | FK → Course, User (rekap nilai akhir) | ✅ Selesai |
+| CalendarEvent   | FK → Course (nullable)                | ✅ Selesai |
+| Quiz            | FK → Course                           | ✅ Selesai |
+| Question        | FK → Quiz                             | ✅ Selesai |
+| QuizAttempt     | FK → Quiz, User                       | ✅ Selesai |
+| Notification    | FK → User                             | ✅ Selesai |
 
 ---
 
@@ -263,16 +291,16 @@ graph LR
   M --> UC2
   M --> UC3
   M --> UC4
-  
+
   D --> UC1
   D --> UC2
   D --> UC5
   D --> UC6
-  
+
   T --> UC1
   T --> UC7
   T --> UC8
-  
+
   A --> UC1
   A --> UC9
   A --> UC10
@@ -308,7 +336,7 @@ sequenceDiagram
     participant V as StudentDashboard UI
     participant S as AuthStore (Zustand)
     participant API as Simulated API / LocalStorage
-    
+
     M->>V: Pilih File & Click "Submit Tugas"
     activate V
     V->>S: Get current student ID ("STU-001")

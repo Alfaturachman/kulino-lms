@@ -2,7 +2,7 @@
 
 **Sistem:** KULINO — Kuliah Online | Learning Management System  
 **Teknologi:** PostgreSQL  
-**Versi Dokumen:** 1.0  
+**Versi Dokumen:** 1.1  
 **Tanggal:** Juni 2026  
 **Status:** Rancangan Final (Siap Produksi)
 
@@ -58,13 +58,14 @@ Menyimpan informasi mata kuliah/kelas yang aktif.
 
 Menghubungkan mahasiswa dengan kelas yang mereka ambil (relasi banyak-ke-banyak).
 
-| Nama Kolom   | Tipe Data     | Batasan (Constraints)                    | Keterangan                                |
-| :----------- | :------------ | :--------------------------------------- | :---------------------------------------- |
-| `id`         | `UUID`        | Primary Key, Default `gen_random_uuid()` | Pengidentifikasi unik pendaftaran.        |
-| `student_id` | `UUID`        | FK → `users(id)`, ON DELETE CASCADE      | ID mahasiswa yang mendaftar.              |
-| `course_id`  | `UUID`        | FK → `courses(id)`, ON DELETE CASCADE    | ID kelas yang diikuti.                    |
-| `status`     | `VARCHAR(15)` | Default 'active'                         | Status: `active`, `dropped`, `completed`. |
-| `created_at` | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`              | Tanggal mahasiswa masuk ke kelas.         |
+| Nama Kolom     | Tipe Data     | Batasan (Constraints)                             | Keterangan                                |
+| :------------- | :------------ | :------------------------------------------------ | :---------------------------------------- |
+| `id`           | `UUID`        | Primary Key, Default `gen_random_uuid()`          | Pengidentifikasi unik pendaftaran.        |
+| `student_id`   | `UUID`        | FK → `users(id)`, ON DELETE CASCADE               | ID mahasiswa yang mendaftar.              |
+| `course_id`    | `UUID`        | FK → `courses(id)`, ON DELETE CASCADE             | ID kelas yang diikuti.                    |
+| `status`       | `VARCHAR(15)` | Default 'active'                                  | Status: `active`, `dropped`, `completed`. |
+| `progress_pct` | `INTEGER`     | Default 0, Check `progress_pct BETWEEN 0 AND 100` | Persentase progres belajar (0–100%).      |
+| `created_at`   | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`                       | Tanggal mahasiswa masuk ke kelas.         |
 
 _Batasan Tambahan:_ Kombinasi `(student_id, course_id)` harus unik (`UNIQUE`).
 
@@ -158,14 +159,14 @@ Menyimpan data pengumuman yang disiarkan di kelas.
 
 Menyimpan topik diskusi dalam forum kelas.
 
-| Nama Kolom    | Tipe Data      | Batasan (Constraints)                    | Keterangan                          |
-| :------------ | :------------- | :--------------------------------------- | :---------------------------------- |
-| `id`          | `UUID`         | Primary Key, Default `gen_random_uuid()` | Pengidentifikasi unik thread forum. |
-| `course_id`   | `UUID`         | FK → `courses(id)`, ON DELETE CASCADE    | ID kelas terkait.                   |
-| `title`       | `VARCHAR(200)` | NOT NULL                                 | Judul topik diskusi.                |
-| `content`     | `TEXT`         | NOT NULL                                 | Isi pertanyaan/topik utama.         |
-| `author_name` | `VARCHAR(100)` | NOT NULL                                 | Nama pembuat topik.                 |
-| `date`        | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`              | Tanggal pembuatan thread.           |
+| Nama Kolom  | Tipe Data      | Batasan (Constraints)                    | Keterangan                                         |
+| :---------- | :------------- | :--------------------------------------- | :------------------------------------------------- |
+| `id`        | `UUID`         | Primary Key, Default `gen_random_uuid()` | Pengidentifikasi unik thread forum.                |
+| `course_id` | `UUID`         | FK → `courses(id)`, ON DELETE CASCADE    | ID kelas terkait.                                  |
+| `author_id` | `UUID`         | FK → `users(id)`, ON DELETE CASCADE      | ID pengguna pembuat topik (referential integrity). |
+| `title`     | `VARCHAR(200)` | NOT NULL                                 | Judul topik diskusi.                               |
+| `content`   | `TEXT`         | NOT NULL                                 | Isi pertanyaan/topik utama.                        |
+| `date`      | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`              | Tanggal pembuatan thread.                          |
 
 ---
 
@@ -173,13 +174,13 @@ Menyimpan topik diskusi dalam forum kelas.
 
 Menyimpan tanggapan/jawaban mahasiswa & dosen pada topik diskusi.
 
-| Nama Kolom      | Tipe Data      | Batasan (Constraints)                     | Keterangan                        |
-| :-------------- | :------------- | :---------------------------------------- | :-------------------------------- |
-| `id`            | `UUID`         | Primary Key, Default `gen_random_uuid()`  | Pengidentifikasi unik balasan.    |
-| `discussion_id` | `UUID`         | FK → `discussions(id)`, ON DELETE CASCADE | Topik diskusi induk yang dibalas. |
-| `author_name`   | `VARCHAR(100)` | NOT NULL                                  | Nama pengirim tanggapan.          |
-| `content`       | `TEXT`         | NOT NULL                                  | Isi teks tanggapan.               |
-| `date`          | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`               | Tanggal tanggapan dikirim.        |
+| Nama Kolom      | Tipe Data   | Batasan (Constraints)                     | Keterangan                                              |
+| :-------------- | :---------- | :---------------------------------------- | :------------------------------------------------------ |
+| `id`            | `UUID`      | Primary Key, Default `gen_random_uuid()`  | Pengidentifikasi unik balasan.                          |
+| `discussion_id` | `UUID`      | FK → `discussions(id)`, ON DELETE CASCADE | Topik diskusi induk yang dibalas.                       |
+| `author_id`     | `UUID`      | FK → `users(id)`, ON DELETE CASCADE       | ID pengguna pengirim tanggapan (referential integrity). |
+| `content`       | `TEXT`      | NOT NULL                                  | Isi teks tanggapan.                                     |
+| `date`          | `TIMESTAMP` | Default `CURRENT_TIMESTAMP`               | Tanggal tanggapan dikirim.                              |
 
 ---
 
@@ -213,6 +214,75 @@ Menyimpan rekap nilai akhir kumulatif mahasiswa per mata kuliah untuk kebutuhan 
 | `participation_score` | `NUMERIC(5,2)` | CHECK `participation_score BETWEEN 0 AND 100` | Nilai partisipasi/keaktifan (bobot 10%).  |
 | `final_grade_letter`  | `VARCHAR(2)`   | NULL                                          | Nilai huruf mutu (A, AB, B, BC, C, D, E). |
 | `updated_at`          | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                   | Waktu kalkulasi nilai terakhir.           |
+
+---
+
+### 2.13 Tabel `quizzes`
+
+Menyimpan data konfigurasi kuis, UTS, dan UAS per mata kuliah.
+
+| Nama Kolom     | Tipe Data      | Batasan (Constraints)                            | Keterangan                                      |
+| :------------- | :------------- | :----------------------------------------------- | :---------------------------------------------- |
+| `id`           | `UUID`         | Primary Key, Default `gen_random_uuid()`         | Pengidentifikasi unik kuis.                     |
+| `course_id`    | `UUID`         | FK → `courses(id)`, ON DELETE CASCADE            | ID kelas terkait.                               |
+| `title`        | `VARCHAR(150)` | NOT NULL                                         | Nama kuis/ujian.                                |
+| `type`         | `VARCHAR(10)`  | NOT NULL, Check `type IN ('quiz', 'uts', 'uas')` | Jenis: kuis reguler, UTS, atau UAS.             |
+| `duration_min` | `INTEGER`      | NOT NULL, Check `duration_min > 0`               | Durasi pengerjaan dalam menit.                  |
+| `open_at`      | `TIMESTAMP`    | NOT NULL                                         | Waktu kuis mulai dapat diakses mahasiswa.       |
+| `close_at`     | `TIMESTAMP`    | NOT NULL                                         | Waktu kuis ditutup (auto-submit jika terlewat). |
+| `is_published` | `BOOLEAN`      | Default FALSE                                    | Status visibilitas kuis ke mahasiswa.           |
+| `created_at`   | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                      | Tanggal kuis dibuat.                            |
+
+---
+
+### 2.14 Tabel `questions`
+
+Menyimpan soal-soal yang terdapat dalam sebuah kuis.
+
+| Nama Kolom   | Tipe Data     | Batasan (Constraints)                                    | Keterangan                                        |
+| :----------- | :------------ | :------------------------------------------------------- | :------------------------------------------------ |
+| `id`         | `UUID`        | Primary Key, Default `gen_random_uuid()`                 | Pengidentifikasi unik soal.                       |
+| `quiz_id`    | `UUID`        | FK → `quizzes(id)`, ON DELETE CASCADE                    | ID kuis tempat soal berada.                       |
+| `content`    | `TEXT`        | NOT NULL                                                 | Isi teks soal.                                    |
+| `type`       | `VARCHAR(15)` | NOT NULL, Check `type IN ('mcq', 'essay', 'true_false')` | Tipe soal: pilihan ganda, esai, atau benar/salah. |
+| `options`    | `JSONB`       | NULL                                                     | Daftar pilihan jawaban (hanya untuk MCQ).         |
+| `answer_key` | `TEXT`        | NULL                                                     | Kunci jawaban (hanya untuk MCQ & true_false).     |
+| `order_no`   | `INTEGER`     | NOT NULL                                                 | Urutan tampil soal dalam kuis.                    |
+
+---
+
+### 2.15 Tabel `quiz_attempts`
+
+Menyimpan hasil pengerjaan kuis oleh mahasiswa.
+
+| Nama Kolom     | Tipe Data      | Batasan (Constraints)                    | Keterangan                                           |
+| :------------- | :------------- | :--------------------------------------- | :--------------------------------------------------- |
+| `id`           | `UUID`         | Primary Key, Default `gen_random_uuid()` | Pengidentifikasi unik attempt.                       |
+| `quiz_id`      | `UUID`         | FK → `quizzes(id)`, ON DELETE CASCADE    | ID kuis yang dikerjakan.                             |
+| `student_id`   | `UUID`         | FK → `users(id)`, ON DELETE CASCADE      | ID mahasiswa yang mengerjakan.                       |
+| `started_at`   | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`              | Waktu mahasiswa mulai mengerjakan.                   |
+| `submitted_at` | `TIMESTAMP`    | NULL                                     | Waktu pengumpulan jawaban (NULL jika belum selesai). |
+| `score`        | `NUMERIC(5,2)` | NULL, Check `score BETWEEN 0 AND 100`    | Nilai akhir kuis (dihitung otomatis untuk MCQ).      |
+| `answers`      | `JSONB`        | NOT NULL                                 | Jawaban mahasiswa per soal dalam format JSON.        |
+| `is_late`      | `BOOLEAN`      | Default FALSE                            | Apakah dikumpulkan setelah `close_at` kuis.          |
+
+_Batasan Tambahan:_ Untuk kuis bertipe `uts` dan `uas`, kombinasi `(quiz_id, student_id)` harus unik (one-time attempt).
+
+---
+
+### 2.16 Tabel `notifications`
+
+Menyimpan notifikasi personal yang dikirim ke pengguna.
+
+| Nama Kolom   | Tipe Data      | Batasan (Constraints)                                                                  | Keterangan                                           |
+| :----------- | :------------- | :------------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| `id`         | `UUID`         | Primary Key, Default `gen_random_uuid()`                                               | Pengidentifikasi unik notifikasi.                    |
+| `user_id`    | `UUID`         | FK → `users(id)`, ON DELETE CASCADE                                                    | ID pengguna penerima notifikasi.                     |
+| `type`       | `VARCHAR(20)`  | NOT NULL, Check `type IN ('deadline', 'grade', 'discussion', 'admin', 'announcement')` | Kategori notifikasi.                                 |
+| `message`    | `VARCHAR(255)` | NOT NULL                                                                               | Teks isi notifikasi.                                 |
+| `related_id` | `UUID`         | NULL                                                                                   | ID entitas terkait (misal: ID tugas, ID kuis, dsb.). |
+| `is_read`    | `BOOLEAN`      | Default FALSE                                                                          | Status baca (FALSE = belum dibaca, TRUE = sudah).    |
+| `created_at` | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                                                            | Waktu notifikasi dibuat.                             |
 
 ---
 
@@ -257,6 +327,7 @@ CREATE TABLE enrollments (
     student_id UUID NOT NULL,
     course_id UUID NOT NULL,
     status VARCHAR(15) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'dropped', 'completed')),
+    progress_pct INTEGER NOT NULL DEFAULT 0 CHECK (progress_pct BETWEEN 0 AND 100),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
@@ -332,21 +403,23 @@ CREATE TABLE announcements (
 CREATE TABLE discussions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     course_id UUID NOT NULL,
+    author_id UUID NOT NULL,
     title VARCHAR(200) NOT NULL,
     content TEXT NOT NULL,
-    author_name VARCHAR(100) NOT NULL,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 10. Pembuatan Tabel discussion_replies
 CREATE TABLE discussion_replies (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     discussion_id UUID NOT NULL,
-    author_name VARCHAR(100) NOT NULL,
+    author_id UUID NOT NULL,
     content TEXT NOT NULL,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE
+    FOREIGN KEY (discussion_id) REFERENCES discussions(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 11. Pembuatan Tabel attendance
@@ -378,6 +451,58 @@ CREATE TABLE grades (
     UNIQUE(student_id, course_id)
 );
 
+-- 13. Pembuatan Tabel quizzes
+CREATE TABLE quizzes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    course_id UUID NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    type VARCHAR(10) NOT NULL CHECK (type IN ('quiz', 'uts', 'uas')),
+    duration_min INTEGER NOT NULL CHECK (duration_min > 0),
+    open_at TIMESTAMP NOT NULL,
+    close_at TIMESTAMP NOT NULL,
+    is_published BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+);
+
+-- 14. Pembuatan Tabel questions
+CREATE TABLE questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    quiz_id UUID NOT NULL,
+    content TEXT NOT NULL,
+    type VARCHAR(15) NOT NULL CHECK (type IN ('mcq', 'essay', 'true_false')),
+    options JSONB,
+    answer_key TEXT,
+    order_no INTEGER NOT NULL,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+);
+
+-- 15. Pembuatan Tabel quiz_attempts
+CREATE TABLE quiz_attempts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    quiz_id UUID NOT NULL,
+    student_id UUID NOT NULL,
+    started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    submitted_at TIMESTAMP,
+    score NUMERIC(5,2) CHECK (score BETWEEN 0 AND 100),
+    answers JSONB NOT NULL DEFAULT '{}',
+    is_late BOOLEAN NOT NULL DEFAULT FALSE,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+    FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 16. Pembuatan Tabel notifications
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('deadline', 'grade', 'discussion', 'admin', 'announcement')),
+    message VARCHAR(255) NOT NULL,
+    related_id UUID,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indeks untuk Mengoptimalkan Query Pencarian
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_courses_lecturer ON courses(lecturer_id);
@@ -389,6 +514,14 @@ CREATE INDEX idx_enrollments_student ON enrollments(student_id);
 CREATE INDEX idx_enrollments_course ON enrollments(course_id);
 CREATE INDEX idx_attendance_course_student ON attendance(course_id, student_id);
 CREATE INDEX idx_grades_student_course ON grades(student_id, course_id);
+CREATE INDEX idx_quizzes_course ON quizzes(course_id);
+CREATE INDEX idx_questions_quiz ON questions(quiz_id);
+CREATE INDEX idx_quiz_attempts_quiz ON quiz_attempts(quiz_id);
+CREATE INDEX idx_quiz_attempts_student ON quiz_attempts(student_id);
+CREATE INDEX idx_notifications_user ON notifications(user_id);
+CREATE INDEX idx_notifications_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
+CREATE INDEX idx_discussions_course ON discussions(course_id);
+CREATE INDEX idx_discussion_replies_discussion ON discussion_replies(discussion_id);
 ```
 
 ---

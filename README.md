@@ -1,20 +1,23 @@
-# LMS — Online Learning Platform
+# KULINO — Learning Management System
 
-> **Frontend prototype** of a web-based Learning Management System (LMS) designed for academic/university use. Built as a **portfolio showcase** focusing on UI design, user flow, and realistic academic experience simulation.
+> **Frontend prototype** of a web-based Learning Management System (LMS) designed for academic use at Universitas Dian Nuswantoro (Udinus). Built as a **portfolio showcase** focusing on UI design, realistic academic workflow simulation, and role-based user experience.
 
 ---
 
 ## Tech Stack
 
-| Layer      | Technology            |
-| ---------- | --------------------- |
-| Framework  | Next.js + React       |
-| Styling    | Tailwind CSS          |
-| Animations | Framer Motion         |
-| Icons      | Lucide React          |
-| Components | ShadCN UI             |
-| Forms      | React Hook Form       |
-| State      | Zustand / Context API |
+| Layer      | Technology                     | Versi       |
+| ---------- | ------------------------------ | ----------- |
+| Framework  | Next.js (App Router)           | `16.2.6`    |
+| UI Library | React                          | `19.2.4`    |
+| Language   | TypeScript                     | `5.x`       |
+| Styling    | Tailwind CSS (CSS-first, v4)   | `^4`        |
+| Animations | Framer Motion                  | `^12`       |
+| Icons      | Lucide React                   | `^1.17`     |
+| Components | Radix UI Primitives + CVA      | latest      |
+| Forms      | React Hook Form + Zod          | `v7` / `v4` |
+| State      | Zustand                        | `v5`        |
+| Backend    | Supabase (Auth + DB + Storage) | `^2.107`    |
 
 ---
 
@@ -92,8 +95,8 @@ Membangun prototype LMS yang:
 
 ### Scope
 
-- **Frontend-only implementation** — tidak ada backend produksi
-- **Static / mock data simulation**
+- **Frontend simulation** — fitur LMS diimplementasikan dengan mock data (Zustand + JSON)
+- **Supabase integration** — Auth, Database PostgreSQL, dan Storage telah dikonfigurasi untuk fase berikutnya
 - Fokus pada **UI/UX, information architecture, dan interaksi pengguna**
 
 ---
@@ -238,21 +241,21 @@ Setiap mata kuliah memiliki halaman detail dengan struktur berikut:
 ## 6. Weekly Learning Flow
 
 ```
-Week 1–7          →  Materi + Penugasan (optional)
-       ↓
-  Midterm (UTS)
-       ↓
-Week 8–14         →  Materi + Penugasan (optional)
-       ↓
-  Final Exam (UAS)
+Week 1–7         →  Materi + Penugasan (optional)
+      ↓
+  Midterm (UTS) — Week 8
+      ↓
+Week 9–15        →  Materi + Penugasan (optional)
+      ↓
+  Final Exam (UAS) — Week 16
 ```
 
-| Fase       | Aktivitas                                  |
-| ---------- | ------------------------------------------ |
-| Week 1–7   | Materi pembelajaran + penugasan (optional) |
-| Midterm    | UTS (Ujian Tengah Semester)                |
-| Week 8–14  | Materi pembelajaran + penugasan (optional) |
-| Final Exam | UAS (Ujian Akhir Semester)                 |
+| Fase       | Minggu    | Aktivitas                                  |
+| ---------- | --------- | ------------------------------------------ |
+| Pra-UTS    | Week 1–7  | Materi pembelajaran + penugasan (optional) |
+| Midterm    | Week 8    | UTS (Ujian Tengah Semester)                |
+| Pra-UAS    | Week 9–15 | Materi pembelajaran + penugasan (optional) |
+| Final Exam | Week 16   | UAS (Ujian Akhir Semester)                 |
 
 ---
 
@@ -369,46 +372,55 @@ Memberikan insight bagi dosen dan admin terkait performa akademik.
 
 ### Architecture
 
-| Layer    | Komponen                       |
-| -------- | ------------------------------ |
-| Frontend | Next.js Web App                |
-| Data     | Mock / Static data simulation  |
-| Storage  | Static Storage Simulation      |
-| Auth     | Authentication Flow Simulation |
+| Layer    | Komponen                               |
+| -------- | -------------------------------------- |
+| Frontend | Next.js 16 Web App (App Router)        |
+| Data     | Mock / Static data simulation (Fase 1) |
+| Backend  | Supabase (Auth + PostgreSQL + Storage) |
+| Storage  | Supabase Storage (file upload)         |
+| Auth     | Supabase Auth + Zustand session store  |
 
-### Documentation
+### Documentation (Product Development Life Cycle)
 
-- [x] Use Case Diagram (Embedded in `Product Development Life Cycle/04_SRS.md`)
-- [x] Activity Diagram (Embedded in `Product Development Life Cycle/04_SRS.md`)
-- [x] Sequence Diagram (Embedded in `Product Development Life Cycle/04_SRS.md`)
-- [ ] Class Diagram
-- [x] ERD (Entity Relationship Diagram) (Embedded in `Product Development Life Cycle/04_SRS.md`)
+| Dokumen                                     | File                                                      | Status |
+| ------------------------------------------- | --------------------------------------------------------- | ------ |
+| Business Requirements Document (BRD)        | `Product Development Life Cycle/01_BRD.md`                | ✅     |
+| Product Requirements Document (PRD)         | `Product Development Life Cycle/02_PRD.md`                | ✅     |
+| Functional Requirements Document (FRD)      | `Product Development Life Cycle/03_FRD.md`                | ✅     |
+| Software Requirements Spec (SRS) + Diagrams | `Product Development Life Cycle/04_SRS.md`                | ✅     |
+| UI/UX Design System                         | `Product Development Life Cycle/05_UIUX_Design_System.md` | ✅     |
+| Progress Report                             | `Product Development Life Cycle/06_Progress.md`           | ✅     |
+| Database Design + DDL SQL                   | `Product Development Life Cycle/07_Database_Design.md`    | ✅     |
+| Testing Plan                                | `Product Development Life Cycle/08_Testing_Plan.md`       | ✅     |
+
+> Use Case Diagram, Activity Diagram, Sequence Diagram, dan ERD tersedia sebagai Mermaid diagrams di dalam `04_SRS.md`.
 
 ---
 
 ## 11. Database Planning
 
-> Implementasi basis data fisik, DDL SQL script lengkap, dan data dictionary dapat diakses di `Product Development Life Cycle/07_Database_Design.md`.
-
 ### Core Entities
 
-| Entitas         | Keterangan                      |
-| --------------- | ------------------------------- |
-| `User`          | Semua pengguna sistem           |
-| `Role`          | Peran pengguna                  |
-| `Course`        | Mata kuliah                     |
-| `Module`        | Modul / materi per pertemuan    |
-| `Assignment`    | Penugasan                       |
-| `Submission`    | Hasil pengumpulan tugas         |
-| `Quiz`          | Kuis                            |
-| `Question`      | Soal kuis                       |
-| `Enrollment`    | Pendaftaran mahasiswa ke course |
-| `Attendance`    | Absensi                         |
-| `Grade`         | Nilai                           |
-| `Discussion`    | Forum diskusi                   |
-| `Announcement`  | Pengumuman                      |
-| `Notification`  | Notifikasi pengguna             |
-| `CalendarEvent` | Agenda akademik                 |
+| Entitas           | Keterangan                         |
+| ----------------- | ---------------------------------- |
+| `User`            | Semua pengguna sistem + role field |
+| `Course`          | Mata kuliah                        |
+| `Enrollment`      | Pendaftaran mahasiswa ke course    |
+| `Module`          | Modul / materi per pertemuan       |
+| `Assignment`      | Penugasan                          |
+| `Submission`      | Hasil pengumpulan tugas            |
+| `Quiz`            | Kuis / UTS / UAS                   |
+| `Question`        | Soal kuis                          |
+| `QuizAttempt`     | Hasil pengerjaan kuis mahasiswa    |
+| `Attendance`      | Absensi per minggu                 |
+| `Grade`           | Rekap nilai akhir per mata kuliah  |
+| `Discussion`      | Thread forum diskusi               |
+| `DiscussionReply` | Balasan thread forum               |
+| `Announcement`    | Pengumuman kelas                   |
+| `Notification`    | Notifikasi personal pengguna       |
+| `CalendarEvent`   | Agenda akademik                    |
+
+> Detail struktur tabel, DDL SQL script, constraints, dan seed data tersedia di `Product Development Life Cycle/07_Database_Design.md`.
 
 ---
 

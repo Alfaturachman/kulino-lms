@@ -2,14 +2,14 @@
 
 ## KULINO — Kuliah Online | Learning Management System Udinus
 
-**Versi:** 1.0 | **Tanggal:** Juni 2026 | **Status:** ✓ Completed (Prototype Production-Ready)
+**Versi:** 1.1 | **Tanggal:** Juni 2026 | **Status:** ✓ Completed (Prototype Production-Ready)
 
 ---
 
 ## Ringkasan
 
-| Area                    | Progress | Status     |
-| ----------------------- | -------- | ---------- |
+| Area                    | Progress | Status    |
+| ----------------------- | -------- | --------- |
 | Auth & Route Protection | 100%     | ✓ Selesai |
 | UI Component Library    | 100%     | ✓ Selesai |
 | Design System           | 100%     | ✓ Selesai |
@@ -18,7 +18,9 @@
 | Domain Data & Types     | 100%     | ✓ Selesai |
 | Fitur LMS Inti          | 100%     | ✓ Selesai |
 
-**Keseluruhan: 100% (Fase Prototipe & Simulasi Komplet)**
+**Keseluruhan: 100% (Fase Prototipe & Simulasi Frontend Komplet)**
+
+> **Catatan Scope:** Status "Selesai" di atas mengacu pada implementasi **simulasi frontend** menggunakan mock data (JSON + Zustand store). Tidak ada backend REST API atau koneksi database production yang aktif di fase ini. Semua interaksi (submit tugas, grading, forum) adalah simulasi state-management di sisi klien. Integrasi backend Supabase/PostgreSQL dijadwalkan pada fase berikutnya.
 
 ---
 
@@ -26,8 +28,8 @@
 
 ### Halaman & Rute
 
-| Route                    | Halaman & Deskripsi Fitur                                                                                                     | Status     |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| Route                    | Halaman & Deskripsi Fitur                                                                                                     | Status    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | --------- |
 | `/`                      | Landing page — branding + CTA login/register                                                                                  | ✓ Selesai |
 | `/login`                 | Form login dengan validasi Zod + role-based redirect                                                                          | ✓ Selesai |
 | `/register`              | Form registrasi 4 field (nama, email, password, confirm)                                                                      | ✓ Selesai |
@@ -73,9 +75,12 @@
 
 ### Tech Stack
 
-- **Next.js**: 16.2.6
-- **React**: 19.2.4
-- **Tailwind CSS**: v4 (CSS-first config)
-- **Zustand**: v5 (State management auth)
-- **Zod**: v4 (Form validations)
-- **Lucide Icons**: Library icon modern
+| Teknologi    | Versi          | Keterangan                     |
+| ------------ | -------------- | ------------------------------ |
+| Next.js      | 15.x           | App Router, SSR/SSG            |
+| React        | 19.2.4         | UI components                  |
+| TypeScript   | 5.x            | Type safety                    |
+| Tailwind CSS | v4 (CSS-first) | Styling tanpa config file      |
+| Zustand      | v5             | Global state management (Auth) |
+| Zod          | v4             | Form & schema validation       |
+| Lucide Icons | Latest         | Icon library modern            |
