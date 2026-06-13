@@ -109,11 +109,24 @@ export default function StudentDashboardClient({
     const { user: localUser } = useAuthStore();
     const activeUser = dbUser || localUser;
 
-    const coursesToUse = dbCourses && dbCourses.length > 0 ? dbCourses : mockCourses;
-    const announcementsToUse = dbAnnouncements && dbAnnouncements.length > 0 ? dbAnnouncements : mockAnnouncements;
-    const calendarEventsToUse = dbCalendarEvents && dbCalendarEvents.length > 0 ? dbCalendarEvents : mockCalendarEvents;
-    const assignmentsToUse = dbAssignments && dbAssignments.length > 0 ? dbAssignments : mockAssignments;
-    const submissionsToUse = dbSubmissions && dbSubmissions.length > 0 ? dbSubmissions : mockSubmissions;
+    const coursesToUse =
+        dbCourses && dbCourses.length > 0 ? dbCourses : mockCourses;
+    const announcementsToUse =
+        dbAnnouncements && dbAnnouncements.length > 0
+            ? dbAnnouncements
+            : mockAnnouncements;
+    const calendarEventsToUse =
+        dbCalendarEvents && dbCalendarEvents.length > 0
+            ? dbCalendarEvents
+            : mockCalendarEvents;
+    const assignmentsToUse =
+        dbAssignments && dbAssignments.length > 0
+            ? dbAssignments
+            : mockAssignments;
+    const submissionsToUse =
+        dbSubmissions && dbSubmissions.length > 0
+            ? dbSubmissions
+            : mockSubmissions;
 
     const [searchTerm, setSearchTerm] = useState('');
     const [courseFilter, setCourseFilter] = useState<
@@ -170,7 +183,7 @@ export default function StudentDashboardClient({
                             Selamat datang kembali, {studentName}!
                         </h1>
                         <p className="text-[13px] text-white/80 md:text-[14px]">
-                            NIM: {studentNim} &bull; Program Studi Teknik
+                            NIM: {studentNim} {''} &bull; Program Studi Teknik
                             Informatika &bull; Universitas Dian Nuswantoro
                         </p>
                     </div>
@@ -265,14 +278,21 @@ export default function StudentDashboardClient({
                                 .filter((c) => c.status === 'active')
                                 .slice(0, 4)
                                 .map((course, idx) => {
-                                    const IconComponent = course.icon || BookOpen;
+                                    const IconComponent =
+                                        course.icon || BookOpen;
                                     // Hardcoded progress simulation for student
                                     const progress =
-                                        course.id === 'CS-101' || course.id === 'c101c101-c101-c101-c101-c101c101c101'
+                                        course.id === 'CS-101' ||
+                                        course.id ===
+                                            'c101c101-c101-c101-c101-c101c101c101'
                                             ? 45
-                                            : course.id === 'CS-102' || course.id === 'c102c102-c102-c102-c102-c102c102c102'
+                                            : course.id === 'CS-102' ||
+                                                course.id ===
+                                                    'c102c102-c102-c102-c102-c102c102c102'
                                               ? 30
-                                              : course.id === 'CS-103' || course.id === 'c103c103-c103-c103-c103-c103c103c103'
+                                              : course.id === 'CS-103' ||
+                                                  course.id ===
+                                                      'c103c103-c103-c103-c103-c103c103c103'
                                                 ? 65
                                                 : 15;
                                     const theme =
@@ -366,7 +386,8 @@ export default function StudentDashboardClient({
                                                     sub.assignmentId ===
                                                         asm.id &&
                                                     sub.studentId ===
-                                                        (activeUser?.id || 'STU-001'),
+                                                        (activeUser?.id ||
+                                                            'STU-001'),
                                             );
                                         const deadlineDate = new Date(
                                             asm.deadline,
@@ -513,11 +534,17 @@ export default function StudentDashboardClient({
                                 const progress =
                                     course.status === 'completed'
                                         ? 100
-                                        : course.id === 'CS-101' || course.id === 'c101c101-c101-c101-c101-c101c101c101'
+                                        : course.id === 'CS-101' ||
+                                            course.id ===
+                                                'c101c101-c101-c101-c101-c101c101c101'
                                           ? 45
-                                          : course.id === 'CS-102' || course.id === 'c102c102-c102-c102-c102-c102c102c102'
+                                          : course.id === 'CS-102' ||
+                                              course.id ===
+                                                  'c102c102-c102-c102-c102-c102c102c102'
                                             ? 30
-                                            : course.id === 'CS-103' || course.id === 'c103c103-c103-c103-c103-c103c103c103'
+                                            : course.id === 'CS-103' ||
+                                                course.id ===
+                                                    'c103c103-c103-c103-c103-c103c103c103'
                                               ? 65
                                               : 15;
                                 const theme =

@@ -120,6 +120,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
             saveSession(user);
             set({ user, isAuthenticated: true, isLoading: false });
+
+            // Log login ke audit_logs
+            try {
+                await supabase.from('audit_logs').insert({
+                    user_id: user.id,
+                    action: `Login sebagai ${user.role}: ${user.name}`,
+                    ip_address: '',
+                });
+            } catch {}
+
             return { success: true };
         } catch (err: any) {
             set({ isLoading: false });
@@ -131,9 +141,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     },
 
     logout: async () => {
+        const currentUser = loadSession();
         if (isSupabaseConfigured) {
             try {
                 const supabase = createClient();
+                if (currentUser) {
+                    await supabase.from('audit_logs').insert({
+                        user_id: currentUser.id,
+                        action: `Logout: ${currentUser.name}`,
+                        ip_address: '',
+                    });
+                }
                 await supabase.auth.signOut();
             } catch (err) {
                 console.error('Gagal logout dari Supabase:', err);

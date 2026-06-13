@@ -45,6 +45,6 @@ next-env.d.ts
 
 supabase/*
 
-Product Development Life Cycle/*
+docs/*
 AGENTS.md
 CLAUDE.md
