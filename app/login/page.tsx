@@ -35,8 +35,8 @@ export default function LoginPage() {
 
                 <div className="mb-8 text-center">
                     <p className="text-[14px] text-muted leading-relaxed">
-                        Masuk menggunakan Akun MHS Anda untuk mengakses
-                        layanan akademik KULINO.
+                        Masuk menggunakan Akun MHS Anda untuk mengakses layanan
+                        akademik KULINO.
                     </p>
                 </div>
 
@@ -45,20 +45,17 @@ export default function LoginPage() {
                 </div>
 
                 <p className="mt-8 text-center text-[13px] text-muted">
-                    Belum memiliki akun?{' '}
-                    <Link
-                        href="/register"
-                        className="font-semibold text-iris-600 hover:text-iris-700 transition-colors"
-                    >
-                        Ajukan akses
-                    </Link>
+                    Belum memiliki akun? Hubungi Admin atau Tata Usaha untuk
+                    pembuatan akun.
                 </p>
 
                 <div className="mt-6 pt-6 border-t border-border/50">
-                    <Button variant="secondary" className="w-full rounded-sm" asChild>
-                        <Link href="/">
-                            Kembali ke Beranda
-                        </Link>
+                    <Button
+                        variant="secondary"
+                        className="w-full rounded-sm"
+                        asChild
+                    >
+                        <Link href="/">Kembali ke Beranda</Link>
                     </Button>
                 </div>
             </div>

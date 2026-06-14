@@ -13,6 +13,7 @@ import { UsersTab } from '@/components/admin/UsersTab';
 import { CalendarTab } from '@/components/admin/CalendarTab';
 import { ReportsTab } from '@/components/admin/ReportsTab';
 import { SettingsTab } from '@/components/admin/SettingsTab';
+import { createUserInAuth } from './actions';
 
 interface AdminDashboardClientProps {
     initialTab: string;
@@ -185,13 +186,7 @@ export default function AdminDashboardClient({
             return;
         }
         try {
-            const newId = crypto.randomUUID();
-            const { error } = await supabase.from('users').insert({
-                id: newId,
-                ...data,
-                password: '12345678',
-            });
-            if (error) throw error;
+            await createUserInAuth(data);
             await fetchData();
             await logAction(
                 `Mendaftarkan user baru: ${data.name} (${data.email})`,

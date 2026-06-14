@@ -1,0 +1,304 @@
+{
+  "version": "6.0",
+  "nxVersion": "22.7.5",
+  "pathMappings": {
+    "@/*": [
+      "./*"
+    ]
+  },
+  "nxJsonPlugins": [],
+  "fileMap": {
+    "projectFileMap": {},
+    "nonProjectFiles": [
+      {
+        "file": ".gitignore",
+        "hash": "308710606621375704"
+      },
+      {
+        "file": "README.md",
+        "hash": "4311781345287993060"
+      },
+      {
+        "file": "app/(protected)/admin/AdminDashboardClient.tsx",
+        "hash": "1876309608421124316"
+      },
+      {
+        "file": "app/(protected)/admin/actions.ts",
+        "hash": "8212148629053492864"
+      },
+      {
+        "file": "app/(protected)/admin/page.tsx",
+        "hash": "8635444335630714229"
+      },
+      {
+        "file": "app/(protected)/dashboard/StudentDashboardClient.tsx",
+        "hash": "7741647802823378139"
+      },
+      {
+        "file": "app/(protected)/dashboard/course/[id]/CourseDetailClient.tsx",
+        "hash": "724509681362360299"
+      },
+      {
+        "file": "app/(protected)/dashboard/course/[id]/page.tsx",
+        "hash": "16438860376687161367"
+      },
+      {
+        "file": "app/(protected)/dashboard/page.tsx",
+        "hash": "3508308818617157880"
+      },
+      {
+        "file": "app/(protected)/layout.tsx",
+        "hash": "18272265569383108774"
+      },
+      {
+        "file": "app/(protected)/lecturer/LecturerDashboardClient.tsx",
+        "hash": "17307977644058637661"
+      },
+      {
+        "file": "app/(protected)/lecturer/course/[id]/LecturerCourseDetailClient.tsx",
+        "hash": "7883832439019098736"
+      },
+      {
+        "file": "app/(protected)/lecturer/course/[id]/page.tsx",
+        "hash": "8779855606502741551"
+      },
+      {
+        "file": "app/(protected)/lecturer/page.tsx",
+        "hash": "9952314207410793559"
+      },
+      {
+        "file": "app/(protected)/staff/StaffDashboardClient.tsx",
+        "hash": "8267628027685797295"
+      },
+      {
+        "file": "app/(protected)/staff/page.tsx",
+        "hash": "15782686857967318732"
+      },
+      {
+        "file": "app/courses/page.tsx",
+        "hash": "7237681852661847301"
+      },
+      {
+        "file": "app/error.tsx",
+        "hash": "14491952903176813197"
+      },
+      {
+        "file": "app/favicon.ico",
+        "hash": "9157999678830540297"
+      },
+      {
+        "file": "app/globals.css",
+        "hash": "16097931242294590179"
+      },
+      {
+        "file": "app/layout.tsx",
+        "hash": "8127349046886029941"
+      },
+      {
+        "file": "app/login/page.tsx",
+        "hash": "7255190684944413252"
+      },
+      {
+        "file": "app/page.tsx",
+        "hash": "5763554273306642228"
+      },
+      {
+        "file": "components/admin/CalendarTab.tsx",
+        "hash": "6983844441371255850"
+      },
+      {
+        "file": "components/admin/OverviewTab.tsx",
+        "hash": "7702996208810030476"
+      },
+      {
+        "file": "components/admin/ReportsTab.tsx",
+        "hash": "2321206713803215374"
+      },
+      {
+        "file": "components/admin/SettingsTab.tsx",
+        "hash": "11074906523793481670"
+      },
+      {
+        "file": "components/admin/UsersTab.tsx",
+        "hash": "14624071985396512193"
+      },
+      {
+        "file": "components/auth-guard.tsx",
+        "hash": "15034703696228198815"
+      },
+      {
+        "file": "components/landing-faq.tsx",
+        "hash": "16999492563400911916"
+      },
+      {
+        "file": "components/landing-footer.tsx",
+        "hash": "3039486207281822112"
+      },
+      {
+        "file": "components/landing-how-it-works.tsx",
+        "hash": "17161918407432161310"
+      },
+      {
+        "file": "components/landing-navbar.tsx",
+        "hash": "11719502613801464048"
+      },
+      {
+        "file": "components/landing-stats.tsx",
+        "hash": "9386281472237194475"
+      },
+      {
+        "file": "components/landing-tabs-showcase.tsx",
+        "hash": "13764362204863997534"
+      },
+      {
+        "file": "components/landing-testimonials.tsx",
+        "hash": "14475394886718007459"
+      },
+      {
+        "file": "components/login-form.tsx",
+        "hash": "6397217825338360603"
+      },
+      {
+        "file": "components/sidebar.tsx",
+        "hash": "12169102081690666012"
+      },
+      {
+        "file": "components/top-bar.tsx",
+        "hash": "3230150300146336984"
+      },
+      {
+        "file": "components/ui/alert-modal.tsx",
+        "hash": "6290464167636328527"
+      },
+      {
+        "file": "components/ui/badge.tsx",
+        "hash": "2579776916710694098"
+      },
+      {
+        "file": "components/ui/button.tsx",
+        "hash": "14489630528968563177"
+      },
+      {
+        "file": "components/ui/card.tsx",
+        "hash": "6972804944933173168"
+      },
+      {
+        "file": "components/ui/input.tsx",
+        "hash": "4188239673814751049"
+      },
+      {
+        "file": "components/ui/label.tsx",
+        "hash": "16811325487884423325"
+      },
+      {
+        "file": "components/ui/textarea.tsx",
+        "hash": "11612014984653500445"
+      },
+      {
+        "file": "data/courses.ts",
+        "hash": "13135363547805828657"
+      },
+      {
+        "file": "data/mockData.ts",
+        "hash": "15123261117493633990"
+      },
+      {
+        "file": "data/users.ts",
+        "hash": "77953845889361488"
+      },
+      {
+        "file": "eslint.config.mjs",
+        "hash": "11456145150381806295"
+      },
+      {
+        "file": "lib/supabase/client.ts",
+        "hash": "6874546053063286737"
+      },
+      {
+        "file": "lib/supabase/middleware.ts",
+        "hash": "925986374640751265"
+      },
+      {
+        "file": "lib/supabase/server.ts",
+        "hash": "1740542711624004415"
+      },
+      {
+        "file": "lib/utils.ts",
+        "hash": "1260146919662595987"
+      },
+      {
+        "file": "middleware.ts",
+        "hash": "11193792147847875291"
+      },
+      {
+        "file": "next.config.ts",
+        "hash": "6850921188266746327"
+      },
+      {
+        "file": "package-lock.json",
+        "hash": "9332429832350086886"
+      },
+      {
+        "file": "package.json",
+        "hash": "13120493943304117833"
+      },
+      {
+        "file": "postcss.config.mjs",
+        "hash": "12094959087305894889"
+      },
+      {
+        "file": "public/assets/images/logo-udinus-biru.png",
+        "hash": "17027220383488945439"
+      },
+      {
+        "file": "public/assets/images/logo-udinus-putih.png",
+        "hash": "8839672968179577519"
+      },
+      {
+        "file": "public/assets/images/logo-udinus.png",
+        "hash": "18242504481586794709"
+      },
+      {
+        "file": "public/file.svg",
+        "hash": "15617830351863523835"
+      },
+      {
+        "file": "public/globe.svg",
+        "hash": "9134466864871335697"
+      },
+      {
+        "file": "public/next.svg",
+        "hash": "8300767200008744458"
+      },
+      {
+        "file": "public/vercel.svg",
+        "hash": "3007623926711696394"
+      },
+      {
+        "file": "public/window.svg",
+        "hash": "16677869292061012332"
+      },
+      {
+        "file": "store/auth.ts",
+        "hash": "3682736914058379726"
+      },
+      {
+        "file": "tsconfig.json",
+        "hash": "8097238392793607448"
+      },
+      {
+        "file": "types/academic.ts",
+        "hash": "9557931394504279466"
+      },
+      {
+        "file": "types/auth.ts",
+        "hash": "1421064441113185249"
+      },
+      {
+        "file": "types/course.ts",
+        "hash": "14165919883410359614"
+      }
+    ]
+  },
+  "externalNodesHash": "2388887820345654977"
+}

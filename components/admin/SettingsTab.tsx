@@ -44,23 +44,7 @@ export function SettingsTab({
                         className="size-5 text-iris-600 rounded border-border focus:ring-iris-500 cursor-pointer"
                     />
                 </div>
-                <div className="flex items-start justify-between gap-4 border-t border-border pt-6">
-                    <div className="space-y-1">
-                        <Label className="text-[13px] font-bold text-ink">
-                            Pendaftaran Mandiri Mahasiswa (Self-Registration)
-                        </Label>
-                        <p className="text-[11px] text-muted max-w-lg leading-relaxed">
-                            Izinkan pengguna tamu untuk mendaftarkan akun baru
-                            secara mandiri melalui rute `/register`.
-                        </p>
-                    </div>
-                    <input
-                        type="checkbox"
-                        checked={studentRegistration}
-                        onChange={(e) => onChangeRegistration(e.target.checked)}
-                        className="size-5 text-iris-600 rounded border-border focus:ring-iris-500 cursor-pointer"
-                    />
-                </div>
+
                 <div className="flex items-start justify-between gap-4 border-t border-border pt-6">
                     <div className="space-y-1">
                         <Label className="text-[13px] font-bold text-ink">

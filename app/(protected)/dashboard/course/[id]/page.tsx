@@ -20,38 +20,60 @@ export default async function CourseDetailPage(props: {
 
     if (authUser) {
         try {
-            // Fetch course details
-            const { data: course } = await supabase
-                .from('courses')
-                .select('*, users(name)')
+            // Fetch class and course details
+            const { data: clsData } = await supabase
+                .from('classes')
+                .select(
+                    `
+                    id,
+                    class_name,
+                    semester,
+                    status,
+                    courses (
+                        id,
+                        name,
+                        code,
+                        sks,
+                        description
+                    ),
+                    users (
+                        name
+                    )
+                `,
+                )
                 .eq('id', courseId)
                 .single();
 
-            if (course) {
+            if (clsData) {
+                const cls = clsData as any;
+                const c = Array.isArray(cls.courses)
+                    ? cls.courses[0]
+                    : cls.courses;
+                const u = Array.isArray(cls.users) ? cls.users[0] : cls.users;
                 dbCourse = {
-                    id: course.id,
-                    name: course.name,
-                    code: course.code,
-                    class_name: course.class_name,
-                    semester: course.semester,
-                    sks: course.sks,
-                    lecturer: course.users?.name || 'Dr. Budi Santoso',
-                    description: course.description,
-                    status: course.status,
+                    id: cls.id,
+                    name: c?.name || '',
+                    code: c?.code || '',
+                    class_name: cls.class_name,
+                    semester: cls.semester,
+                    sks: c?.sks || 0,
+                    lecturer: u?.name || 'Dr. Budi Santoso',
+                    description: c?.description || '',
+                    status: cls.status,
                 };
             }
 
-            // Fetch modules for this course
+            // Fetch modules for this class
             const { data: modules } = await supabase
                 .from('modules')
                 .select('*')
-                .eq('course_id', courseId)
+                .eq('class_id', courseId)
                 .order('week_no', { ascending: true });
 
             if (modules) {
                 dbModules = modules.map((m: any) => ({
                     id: m.id,
-                    courseId: m.course_id,
+                    courseId: m.class_id,
                     title: m.title,
                     weekNo: m.week_no,
                     type: m.type,
@@ -61,16 +83,16 @@ export default async function CourseDetailPage(props: {
                 }));
             }
 
-            // Fetch assignments for this course
+            // Fetch assignments for this class
             const { data: assignments } = await supabase
                 .from('assignments')
                 .select('*')
-                .eq('course_id', courseId);
+                .eq('class_id', courseId);
 
             if (assignments) {
                 dbAssignments = assignments.map((a: any) => ({
                     id: a.id,
-                    courseId: a.course_id,
+                    courseId: a.class_id,
                     title: a.title,
                     description: a.description,
                     deadline: a.deadline,
@@ -80,12 +102,12 @@ export default async function CourseDetailPage(props: {
                 }));
             }
 
-            // Fetch submissions for this student and course
+            // Fetch submissions for this student and class
             const { data: submissions } = await supabase
                 .from('submissions')
-                .select('*, assignments!inner(course_id)')
+                .select('*, assignments!inner(class_id)')
                 .eq('student_id', authUser.id)
-                .eq('assignments.course_id', courseId);
+                .eq('assignments.class_id', courseId);
 
             if (submissions) {
                 dbSubmissions = submissions.map((s: any) => ({

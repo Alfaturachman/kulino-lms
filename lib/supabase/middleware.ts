@@ -50,10 +50,7 @@ export async function updateSession(request: NextRequest) {
         path.startsWith('/admin') ||
         path.startsWith('/courses');
 
-    const isAuthPath =
-        path === '/' ||
-        path === '/login' ||
-        path === '/register';
+    const isAuthPath = path === '/' || path === '/login';
 
     if (!user && isProtectedPath) {
         const url = request.nextUrl.clone();
@@ -61,11 +58,75 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    // 2. If user is logged in and tries to access landing, login or register, redirect to dashboard.
-    if (user && isAuthPath) {
-        const url = request.nextUrl.clone();
-        url.pathname = '/dashboard';
-        return NextResponse.redirect(url);
+    // 2. If user is logged in, check role permissions and route redirects.
+    if (user) {
+        // Best Practice: Ambil role dari JWT metadata terlebih dahulu untuk performa maksimal (zero database calls)
+        let role = user.user_metadata?.role;
+
+        // Fallback: Jika metadata role tidak ditemukan, baru lakukan query database
+        if (!role) {
+            const { data: dbUser } = await supabase
+                .from('users')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+            role = dbUser?.role || 'mahasiswa';
+        }
+
+        if (isAuthPath) {
+            const url = request.nextUrl.clone();
+            url.pathname =
+                role === 'admin'
+                    ? '/admin'
+                    : role === 'dosen'
+                      ? '/lecturer'
+                      : role === 'tu'
+                        ? '/staff'
+                        : '/dashboard';
+            return NextResponse.redirect(url);
+        }
+
+        // Batasi akses path terproteksi berdasarkan role
+        if (path.startsWith('/admin') && role !== 'admin') {
+            const url = request.nextUrl.clone();
+            url.pathname =
+                role === 'dosen'
+                    ? '/lecturer'
+                    : role === 'tu'
+                      ? '/staff'
+                      : '/dashboard';
+            return NextResponse.redirect(url);
+        }
+        if (path.startsWith('/lecturer') && role !== 'dosen') {
+            const url = request.nextUrl.clone();
+            url.pathname =
+                role === 'admin'
+                    ? '/admin'
+                    : role === 'tu'
+                      ? '/staff'
+                      : '/dashboard';
+            return NextResponse.redirect(url);
+        }
+        if (path.startsWith('/staff') && role !== 'tu') {
+            const url = request.nextUrl.clone();
+            url.pathname =
+                role === 'admin'
+                    ? '/admin'
+                    : role === 'dosen'
+                      ? '/lecturer'
+                      : '/dashboard';
+            return NextResponse.redirect(url);
+        }
+        if (path.startsWith('/dashboard') && role !== 'mahasiswa') {
+            const url = request.nextUrl.clone();
+            url.pathname =
+                role === 'admin'
+                    ? '/admin'
+                    : role === 'dosen'
+                      ? '/lecturer'
+                      : '/staff';
+            return NextResponse.redirect(url);
+        }
     }
 
     return supabaseResponse;

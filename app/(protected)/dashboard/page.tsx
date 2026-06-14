@@ -52,12 +52,12 @@ export default async function DashboardPage(props: {
       // Cek keikutsertaan (enrollments)
       const { data: currentEnrollments } = await supabase
         .from('enrollments')
-        .select('course_id')
+        .select('class_id')
         .eq('student_id', authUser.id);
 
       // Auto-enroll jika belum memiliki keikutsertaan kelas sama sekali
       if (currentEnrollments && currentEnrollments.length === 0) {
-        const seedCourseIds = [
+        const seedClassIds = [
           'c101c101-c101-c101-c101-c101c101c101', // Pemrograman Web
           'c102c102-c102-c102-c102-c102c102c102', // Basis Data
           'c103c103-c103-c103-c103-c103c103c103', // Struktur Data
@@ -66,9 +66,9 @@ export default async function DashboardPage(props: {
           'c106c106-c106-c106-c106-c106c106c106', // RPL
           'c108c108-c108-c108-c108-c108c108c108'  // Praktikum Web
         ];
-        const enrollList = seedCourseIds.map(cid => ({
+        const enrollList = seedClassIds.map(cid => ({
           student_id: authUser.id,
-          course_id: cid,
+          class_id: cid,
           status: 'active'
         }));
         await supabase.from('enrollments').insert(enrollList);
@@ -78,16 +78,19 @@ export default async function DashboardPage(props: {
       const { data: enrolls } = await supabase
         .from('enrollments')
         .select(`
-          course_id,
-          courses (
+          class_id,
+          classes (
             id,
-            name,
-            code,
             class_name,
             semester,
-            sks,
-            description,
             status,
+            courses (
+              id,
+              name,
+              code,
+              sks,
+              description
+            ),
             users (
               name
             )
@@ -97,19 +100,20 @@ export default async function DashboardPage(props: {
 
       if (enrolls && enrolls.length > 0) {
         dbCourses = enrolls
-          .filter((e: any) => e.courses !== null)
+          .filter((e: any) => e.classes !== null)
           .map((e: any) => {
-            const c = e.courses;
+            const cls = e.classes;
+            const c = cls.courses;
             return {
-              id: c.id,
-              name: c.name,
-              code: c.code,
-              class_name: c.class_name,
-              semester: c.semester,
-              sks: c.sks,
-              lecturer: c.users?.name || 'Dr. Budi Santoso',
-              description: c.description,
-              status: c.status
+              id: cls.id,
+              name: c?.name || '',
+              code: c?.code || '',
+              class_name: cls.class_name,
+              semester: cls.semester,
+              sks: c?.sks || 0,
+              lecturer: cls.users?.name || 'Dr. Budi Santoso',
+              description: c?.description || '',
+              status: cls.status
             };
           });
       }
@@ -117,11 +121,11 @@ export default async function DashboardPage(props: {
       // Ambil pengumuman
       const { data: announcementsData } = await supabase
         .from('announcements')
-        .select('*, courses(name)');
+        .select('*, classes(courses(name))');
       if (announcementsData) {
         dbAnnouncements = announcementsData.map((a: any) => ({
           id: a.id,
-          courseId: a.course_id,
+          courseId: a.class_id,
           title: a.title,
           content: a.content,
           date: a.date,
@@ -139,7 +143,7 @@ export default async function DashboardPage(props: {
           title: e.title,
           date: e.date,
           type: e.type,
-          courseId: e.course_id
+          courseId: e.class_id
         }));
       }
 
@@ -150,7 +154,7 @@ export default async function DashboardPage(props: {
       if (assignmentsData) {
         dbAssignments = assignmentsData.map((a: any) => ({
           id: a.id,
-          courseId: a.course_id,
+          courseId: a.class_id,
           title: a.title,
           description: a.description,
           deadline: a.deadline,

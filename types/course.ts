@@ -7,6 +7,8 @@ export interface Course {
     class_name: string;
     semester: string;
     sks: number;
+    teori?: number;
+    praktek?: number;
     lecturer: string;
     description: string;
     status: 'active' | 'completed';
