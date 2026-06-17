@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@supabase/supabase-js';
+import { ConfigurationError } from '@/lib/errors';
 
 export async function createUserInAuth(data: {
     email: string;
@@ -12,7 +13,7 @@ export async function createUserInAuth(data: {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !serviceRoleKey) {
-        throw new Error(
+        throw new ConfigurationError(
             'Konfigurasi Supabase Service Role Key (SUPABASE_SERVICE_ROLE_KEY) belum diset di server environment.',
         );
     }

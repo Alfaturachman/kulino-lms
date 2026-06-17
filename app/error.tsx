@@ -4,17 +4,17 @@ import { useEffect } from "react";
 import { AlertCircle, RotateCcw, Home } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { captureError } from "@/lib/errors";
 
 export default function Error({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
   useEffect(() => {
-    // Log the error to an error reporting service
-    console.error("Unhandled Runtime Error:", error);
+    captureError(error, { source: "error.tsx" });
   }, [error]);
 
   return (
@@ -45,18 +45,19 @@ export default function Error({
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
-            onClick={() => reset()}
+            onClick={() => unstable_retry()}
             className="flex items-center justify-center gap-2"
           >
             <RotateCcw size={14} />
             Coba Lagi
           </Button>
           
-          <Link href="/" passHref legacyBehavior>
-            <a className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-ink bg-white hover:bg-surface2 transition-colors">
-              <Home size={14} />
-              Kembali ke Beranda
-            </a>
+          <Link
+            href="/"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-ink bg-white hover:bg-surface2 transition-colors"
+          >
+            <Home size={14} />
+            Kembali ke Beranda
           </Link>
         </div>
       </div>

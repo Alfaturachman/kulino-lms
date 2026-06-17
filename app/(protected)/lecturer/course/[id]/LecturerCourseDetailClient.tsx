@@ -1,14 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { mockCourses } from "@/data/courses";
-import {
-  mockModules,
-  mockAssignments,
-  mockSubmissions,
-} from "@/data/mockData";
+import { createClient } from "@/lib/supabase/client";
 import type { Module, Assignment, Submission } from "@/types/academic";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -41,9 +36,14 @@ interface LecturerCourseDetailClientProps {
 export default function LecturerCourseDetailClient({
   courseId,
 }: LecturerCourseDetailClientProps) {
-  const course = mockCourses.find((c) => c.id === courseId);
+  const supabase = createClient();
+  const isSupabaseConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http');
 
   // States
+  const [course, setCourse] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"materi" | "tugas" | "penilaian" | "mahasiswa">("materi");
   const [expandedWeeks, setExpandedWeeks] = useState<Record<number, boolean>>({
     1: true,
@@ -51,46 +51,9 @@ export default function LecturerCourseDetailClient({
   });
 
   // Dynamic lists states
-  const [modules, setModules] = useState<Module[]>(
-    mockModules.filter((m) => m.courseId === courseId)
-  );
-  const [assignments, setAssignments] = useState<Assignment[]>(
-    mockAssignments.filter((a) => a.courseId === courseId)
-  );
-  const [submissions, setSubmissions] = useState<Submission[]>([
-    {
-      id: "SUB-001",
-      assignmentId: "ASM-101-01",
-      studentId: "STU-001",
-      studentName: "Ahmad Fauzi",
-      fileUrl: "portfolio_ahmad_fauzi.zip",
-      submittedAt: "2026-06-05T14:30:00",
-      version: 1,
-      grade: 92,
-      feedback: "Sangat bagus! Struktur HTML rapi, styling modern.",
-      isLate: false,
-    },
-    {
-      id: "SUB-002",
-      assignmentId: "ASM-101-01",
-      studentId: "STU-002",
-      studentName: "Citra Kirana",
-      fileUrl: "portofolio_citra.zip",
-      submittedAt: "2026-06-05T16:15:00",
-      version: 1,
-      isLate: false,
-    },
-    {
-      id: "SUB-003",
-      assignmentId: "ASM-101-02",
-      studentId: "STU-001",
-      studentName: "Ahmad Fauzi",
-      fileUrl: "kalkulator_ahmad.zip",
-      submittedAt: "2026-06-06T11:00:00",
-      version: 1,
-      isLate: false,
-    },
-  ]);
+  const [modules, setModules] = useState<Module[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
 
   // Form states: Material upload
   const [showAddMaterial, setShowAddMaterial] = useState(false);
@@ -111,6 +74,148 @@ export default function LecturerCourseDetailClient({
   const [gradingSubId, setGradingSubId] = useState<string | null>(null);
   const [gradeScore, setGradeScore] = useState("");
   const [gradeFeedback, setGradeFeedback] = useState("");
+
+  const fetchData = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      setCourse(null);
+      setModules([]);
+      setAssignments([]);
+      setSubmissions([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: clsData } = await supabase
+        .from('classes')
+        .select(`
+          id,
+          class_name,
+          semester,
+          status,
+          courses (
+            id,
+            name,
+            code,
+            sks,
+            description
+          ),
+          users (
+            name
+          )
+        `)
+        .eq('id', courseId)
+        .single();
+
+      if (clsData) {
+        const cls = clsData as any;
+        const c = Array.isArray(cls.courses) ? cls.courses[0] : cls.courses;
+        const u = Array.isArray(cls.users) ? cls.users[0] : cls.users;
+        setCourse({
+          id: cls.id,
+          name: c?.name || '',
+          code: c?.code || '',
+          class_name: cls.class_name,
+          semester: cls.semester,
+          sks: c?.sks || 0,
+          lecturer: u?.name || 'Dr. Budi Santoso',
+          description: c?.description || '',
+          status: cls.status,
+        });
+      } else {
+        setCourse(null);
+      }
+
+      const { data: modules } = await supabase
+        .from('modules')
+        .select('*')
+        .eq('class_id', courseId)
+        .order('week_no', { ascending: true });
+
+      if (modules) {
+        setModules(modules.map((m: any) => ({
+          id: m.id,
+          courseId: m.class_id,
+          title: m.title,
+          weekNo: m.week_no,
+          type: m.type,
+          contentUrl: m.content_url,
+          description: m.description,
+          isPublished: m.is_published,
+        })));
+      } else {
+        setModules([]);
+      }
+
+      const { data: assignments } = await supabase
+        .from('assignments')
+        .select('*')
+        .eq('class_id', courseId);
+
+      if (assignments) {
+        setAssignments(assignments.map((a: any) => ({
+          id: a.id,
+          courseId: a.class_id,
+          title: a.title,
+          description: a.description,
+          deadline: a.deadline,
+          weightPct: a.weight_pct,
+          allowedFormats: a.allowed_formats,
+          maxSizeMb: a.max_size_mb,
+        })));
+      } else {
+        setAssignments([]);
+      }
+
+      const { data: submissions } = await supabase
+        .from('submissions')
+        .select(`
+          id, assignment_id, student_id, file_url,
+          submitted_at, is_late, grade, feedback, graded_at,
+          users ( name, nim_nip ),
+          assignments ( title, class_id, courses ( name ) )
+        `)
+        .in('assignments.class_id', [courseId]);
+
+      if (submissions) {
+        setSubmissions(submissions.map((s: any) => ({
+          id: s.id,
+          assignmentId: s.assignment_id,
+          studentId: s.student_id,
+          studentName: s.users?.name || '',
+          fileUrl: s.file_url,
+          submittedAt: s.submitted_at,
+          isLate: s.is_late,
+          version: s.version,
+          grade: s.grade,
+          feedback: s.feedback,
+          gradedAt: s.graded_at,
+        })));
+      } else {
+        setSubmissions([]);
+      }
+    } catch (err) {
+      console.error('Gagal mengambil data:', err);
+      setCourse(null);
+      setModules([]);
+      setAssignments([]);
+      setSubmissions([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isSupabaseConfigured, supabase, courseId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-iris-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   if (!course) {
     return (

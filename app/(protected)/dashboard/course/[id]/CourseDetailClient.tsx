@@ -3,14 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { mockCourses } from "@/data/courses";
-import {
-  mockModules,
-  mockAssignments,
-  mockSubmissions,
-  mockDiscussions,
-} from "@/data/mockData";
-import type { Module, Assignment, Submission, Discussion } from "@/types/academic";
+import type { Submission, Discussion } from "@/types/academic";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +27,10 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronUp,
+  Clock,
+  MapPin,
+  Layers,
+  BookOpen,
 } from "lucide-react";
 
 interface CourseDetailClientProps {
@@ -42,6 +39,7 @@ interface CourseDetailClientProps {
   dbModules?: any[];
   dbAssignments?: any[];
   dbSubmissions?: any[];
+  dbDiscussions?: any[];
 }
 
 const getNextSubId = () => `SUB-${Date.now()}`;
@@ -53,10 +51,11 @@ export default function CourseDetailClient({
   dbCourse,
   dbModules,
   dbAssignments,
-  dbSubmissions
+  dbSubmissions,
+  dbDiscussions
 }: CourseDetailClientProps) {
   const router = useRouter();
-  const course = dbCourse || mockCourses.find((c) => c.id === courseId);
+  const course = dbCourse || null;
 
   // States
   const [activeSubTab, setActiveSubTab] = useState<"materi" | "tugas" | "diskusi" | "nilai">("materi");
@@ -73,12 +72,12 @@ export default function CourseDetailClient({
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submissionsList, setSubmissionsList] = useState<Submission[]>(
-    dbSubmissions && dbSubmissions.length > 0 ? dbSubmissions : mockSubmissions
+    dbSubmissions || []
   );
   
   // Discussions
   const [discussions, setDiscussions] = useState<Discussion[]>(
-    mockDiscussions.filter((d) => d.courseId === courseId)
+    dbDiscussions || []
   );
   const [newDiscussionTitle, setNewDiscussionTitle] = useState("");
   const [newDiscussionContent, setNewDiscussionContent] = useState("");
@@ -98,13 +97,9 @@ export default function CourseDetailClient({
     );
   }
 
-  const courseAssignments = dbAssignments && dbAssignments.length > 0
-    ? dbAssignments
-    : mockAssignments.filter((asm) => asm.courseId === courseId);
+  const courseAssignments = dbAssignments || [];
     
-  const courseModules = dbModules && dbModules.length > 0
-    ? dbModules
-    : mockModules.filter((mod) => mod.courseId === courseId);
+  const courseModules = dbModules || [];
 
   const toggleWeek = (weekNo: number) => {
     setExpandedWeeks((prev) => ({ ...prev, [weekNo]: !prev[weekNo] }));
@@ -682,6 +677,65 @@ export default function CourseDetailClient({
 
         {/* Right Column (Course Info Sidebar) */}
         <div className="space-y-6">
+          {/* Informasi Jadwal & Ruangan */}
+          <Card className="p-5 space-y-4">
+            <h3 className="text-[13px] font-bold text-ink uppercase tracking-wider pb-2 border-b border-border/80">
+              Informasi Perkuliahan
+            </h3>
+            <div className="space-y-3.5">
+              {/* Kelompok MK */}
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
+                  <Layers size={16} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-muted uppercase tracking-wider">Kelompok MK</span>
+                  <span className="text-[13px] font-bold text-ink">{course.kelompok_mk || "Wajib Program Studi"}</span>
+                </div>
+              </div>
+
+              {/* SKS Breakdown */}
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-sky-50 text-sky-600 shrink-0">
+                  <BookOpen size={16} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-muted uppercase tracking-wider">Satuan Kredit Semester (SKS)</span>
+                  <span className="text-[13px] font-bold text-ink">
+                    {course.sks} SKS 
+                    <span className="text-muted font-normal text-[12px] ml-1.5">
+                      ({course.teori || 0} Teori, {course.praktek || 0} Praktek)
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Jadwal Pelaksanaan */}
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600 shrink-0">
+                  <Clock size={16} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-muted uppercase tracking-wider">Jadwal Kuliah</span>
+                  <span className="text-[13px] font-bold text-ink capitalize">
+                    {course.day_of_week || "Senin"}, {course.start_time?.substring(0, 5) || "08:00"} - {course.end_time?.substring(0, 5) || "10:30"} WIB
+                  </span>
+                </div>
+              </div>
+
+              {/* Ruangan */}
+              <div className="flex items-start gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 shrink-0">
+                  <MapPin size={16} />
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-muted uppercase tracking-wider">Ruang Kelas</span>
+                  <span className="text-[13px] font-bold text-ink">{course.room || "Ruang H.4.1"}</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
           {/* Lecturer Contact Info */}
           <Card className="p-5 space-y-4">
             <h3 className="text-[13px] font-bold text-ink uppercase tracking-wider pb-2 border-b border-border/80">

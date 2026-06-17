@@ -1,10 +1,50 @@
-import { mockCourses } from "@/data/courses";
 import Link from "next/link";
 import { Search, SlidersHorizontal, BookOpen, Clock, Users, ArrowRight, Bell, LayoutDashboard, Calendar } from "lucide-react";
+import type { Course } from "@/types/course";
+import { createClient } from "@/lib/supabase/server";
 
-export default function CoursesPage() {
-  const activeCourses = mockCourses.filter((c) => c.status === "active");
-  const completedCourses = mockCourses.filter((c) => c.status === "completed");
+export default async function CoursesPage() {
+  const supabase = await createClient();
+
+  const { data: classesData } = await supabase
+    .from('classes')
+    .select(`
+      id,
+      class_name,
+      semester,
+      status,
+      courses (
+        id,
+        name,
+        code,
+        sks,
+        teori,
+        praktek,
+        description
+      ),
+      users (
+        name
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  const courses: Course[] = (classesData || []).map((cls: any) => ({
+    id: cls.id,
+    name: cls.courses?.name || '',
+    code: cls.courses?.code || '',
+    class_name: cls.class_name,
+    semester: cls.semester,
+    sks: cls.courses?.sks || 0,
+    teori: cls.courses?.teori,
+    praktek: cls.courses?.praktek,
+    lecturer: cls.users?.name || '-',
+    description: cls.courses?.description || '',
+    status: cls.status,
+    icon: BookOpen,
+  }));
+
+  const activeCourses = courses.filter((c) => c.status === "active");
+  const completedCourses = courses.filter((c) => c.status === "completed");
 
   return (
     <div className="min-h-screen bg-surface2/30 font-sans selection:bg-iris-500/30 selection:text-ink">
@@ -117,7 +157,7 @@ export default function CoursesPage() {
   );
 }
 
-function CourseCard({ course, isActive }: { course: (typeof mockCourses)[number], isActive: boolean }) {
+function CourseCard({ course, isActive }: { course: Course, isActive: boolean }) {
   return (
     <div className={`group relative flex flex-col rounded-xl border ${isActive ? 'border-border/80 hover:border-iris-300' : 'border-border/40 hover:border-border'} bg-surface p-5 shadow-sm hover:shadow-md transition-all duration-300`}>
         {/* Top Accent Line on hover for active courses */}

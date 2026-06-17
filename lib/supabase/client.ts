@@ -4,5 +4,13 @@ export function createClient() {
     return createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookieOptions: {
+                maxAge: 60 * 60 * 24, // 24 jam dalam detik (1 hari) untuk keamanan session
+                path: '/',
+                sameSite: 'lax',
+                secure: process.env.NODE_ENV === 'production',
+            },
+        },
     );
 }

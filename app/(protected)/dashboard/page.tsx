@@ -84,11 +84,16 @@ export default async function DashboardPage(props: {
             class_name,
             semester,
             status,
+            day_of_week,
+            start_time,
+            end_time,
+            room,
             courses (
               id,
               name,
               code,
               sks,
+              kelompok_mk,
               description
             ),
             users (
@@ -111,6 +116,11 @@ export default async function DashboardPage(props: {
               class_name: cls.class_name,
               semester: cls.semester,
               sks: c?.sks || 0,
+              kelompok_mk: c?.kelompok_mk || 'Wajib Program Studi',
+              day_of_week: cls.day_of_week,
+              start_time: cls.start_time,
+              end_time: cls.end_time,
+              room: cls.room,
               lecturer: cls.users?.name || 'Dr. Budi Santoso',
               description: c?.description || '',
               status: cls.status

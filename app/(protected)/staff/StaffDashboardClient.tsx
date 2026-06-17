@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
-import { mockCourses } from "@/data/courses";
-import { mockUsers } from "@/data/users";
 import { Course } from "@/types/course";
 import { User } from "@/types/auth";
+import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -55,29 +54,16 @@ export default function StaffDashboardClient({
   const { user } = useAuthStore();
   const staffName = user?.name || "Siti Rahma";
 
-  // State arrays copied from mocks
-  const [courses, setCourses] = useState<Course[]>(mockCourses);
-  const [systemUsers, setSystemUsers] = useState<User[]>([
-    ...mockUsers,
-    { id: "STU-002", name: "Citra Kirana", email: "citra@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102002" },
-    { id: "STU-003", name: "Bima Sakti", email: "bima@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102005" },
-    { id: "STU-004", name: "Dewi Ayu", email: "dewi@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102078" },
-    { id: "STU-005", name: "Galih Prasetya", email: "galih@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102044" },
-  ]);
+  const supabase = createClient();
+  const isSupabaseConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith("http");
 
-  // Lecturer list
-  const lecturers = ["Dr. Budi Santoso", "Dr. Siti Rahmawati", "Dr. Ahmad Hidayat", "Dr. Dewi Lestari", "Dr. Rudi Hartono"];
-
-  // Course Enrollments state (mock data mapping students to classes)
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([
-    { courseId: "CS-101", studentId: "STU-001", studentName: "Ahmad Fauzi", nim: "220102001" },
-    { courseId: "CS-101", studentId: "STU-002", studentName: "Citra Kirana", nim: "220102002" },
-    { courseId: "CS-101", studentId: "STU-003", studentName: "Bima Sakti", nim: "220102005" },
-    { courseId: "CS-102", studentId: "STU-001", studentName: "Ahmad Fauzi", nim: "220102001" },
-    { courseId: "CS-102", studentId: "STU-004", studentName: "Dewi Ayu", nim: "220102078" },
-    { courseId: "CS-103", studentId: "STU-001", studentName: "Ahmad Fauzi", nim: "220102001" },
-    { courseId: "CS-103", studentId: "STU-005", studentName: "Galih Prasetya", nim: "220102044" },
-  ]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [systemUsers, setSystemUsers] = useState<User[]>([]);
+  const [lecturers, setLecturers] = useState<string[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Search filter
   const [courseSearch, setCourseSearch] = useState("");
@@ -87,11 +73,11 @@ export default function StaffDashboardClient({
   const [newCourseCode, setNewCourseCode] = useState("");
   const [newCourseClass, setNewCourseClass] = useState("TI-3A");
   const [newCourseSks, setNewCourseSks] = useState("3");
-  const [newCourseLecturer, setNewCourseLecturer] = useState(lecturers[0]);
+  const [newCourseLecturer, setNewCourseLecturer] = useState("");
   const [courseSuccessMessage, setCourseSuccessMessage] = useState("");
 
   // Student Enrollment selection
-  const [selectedCourseId, setSelectedCourseId] = useState("CS-101");
+  const [selectedCourseId, setSelectedCourseId] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
 
   // CSV Import simulation
@@ -120,96 +106,228 @@ export default function StaffDashboardClient({
       !currentCourseEnrollments.some((e) => e.studentId === u.id)
   );
 
-  const handleAddCourse = (e: React.FormEvent) => {
+  const fetchData = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      setCourses([]);
+      setSystemUsers([]);
+      setLecturers([]);
+      setEnrollments([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data: userData } = await supabase
+        .from("users")
+        .select("*")
+        .order("name", { ascending: true });
+      const fetchedUsers = userData || [];
+      setSystemUsers(fetchedUsers);
+      setLecturers(
+        fetchedUsers
+          .filter((u: User) => u.role === "dosen")
+          .map((u: User) => u.name),
+      );
+
+      const { data: classesData } = await supabase
+        .from("classes")
+        .select(`
+          id,
+          class_name,
+          semester,
+          status,
+          courses ( id, name, code, sks, teori, praktek, description ),
+          users ( name )
+        `)
+        .order("created_at", { ascending: false });
+      const mappedCourses = (classesData || []).map((cls: any) => ({
+        id: cls.id,
+        name: cls.courses?.name || "",
+        code: cls.courses?.code || "",
+        class_name: cls.class_name,
+        semester: cls.semester,
+        sks: cls.courses?.sks || 0,
+        teori: cls.courses?.teori,
+        praktek: cls.courses?.praktek,
+        lecturer: cls.users?.name || "-",
+        description: cls.courses?.description || "",
+        status: cls.status,
+        icon: BookOpen,
+      }));
+      setCourses(mappedCourses);
+      if (mappedCourses.length > 0 && !selectedCourseId) {
+        setSelectedCourseId(mappedCourses[0].id);
+      }
+
+      const { data: enrollmentData } = await supabase
+        .from("enrollments")
+        .select(`
+          id, class_id, student_id,
+          users ( name, nim_nip )
+        `)
+        .eq("status", "active");
+      setEnrollments(
+        (enrollmentData || []).map((enr: any) => ({
+          courseId: enr.class_id,
+          studentId: enr.student_id,
+          studentName: enr.users?.name || "",
+          nim: enr.users?.nim_nip || "-",
+        })),
+      );
+    } catch (err) {
+      console.error("Gagal mengambil data:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isSupabaseConfigured, supabase, selectedCourseId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCourseName || !newCourseCode) return;
 
-    // We import Lucide icons dynamically to assign to new courses
-    const newCourse: Course = {
-      id: `CS-${Date.now()}`,
-      name: newCourseName,
-      code: newCourseCode,
-      class_name: newCourseClass,
-      semester: "Ganjil 2025/2026",
-      sks: parseInt(newCourseSks),
-      lecturer: newCourseLecturer,
-      description: `Mata kuliah ${newCourseName} kelas ${newCourseClass} semester Ganjil.`,
-      status: "active",
-      icon: BookOpen,
-    };
+    if (!isSupabaseConfigured) {
+      setCourses((prev) => [...prev, {
+        id: `CS-${Date.now()}`,
+        name: newCourseName,
+        code: newCourseCode,
+        class_name: newCourseClass,
+        semester: "Ganjil 2025/2026",
+        sks: parseInt(newCourseSks),
+        lecturer: newCourseLecturer,
+        description: `Mata kuliah ${newCourseName} kelas ${newCourseClass} semester Ganjil.`,
+        status: "active",
+        icon: BookOpen,
+      }]);
+      resetCourseForm();
+      return;
+    }
 
-    setCourses((prev) => [newCourse, ...prev]);
+    try {
+      const lecturerUser = systemUsers.find(
+        (u) => u.name.toLowerCase() === newCourseLecturer.toLowerCase() && u.role === "dosen",
+      );
+      if (!lecturerUser) { alert("Dosen tidak ditemukan"); return; }
+
+      const { data: existingCourse } = await supabase
+        .from("courses").select("id").eq("code", newCourseCode).single();
+
+      let courseId: string;
+      if (existingCourse) {
+        courseId = existingCourse.id;
+      } else {
+        const { data: kurikulum } = await supabase
+          .from("kurikulum").select("id").eq("is_active", true).limit(1).single();
+        const { data: nc, error: ce } = await supabase
+          .from("courses").insert({
+            name: newCourseName, code: newCourseCode,
+            sks: parseInt(newCourseSks),
+            teori: Math.min(parseInt(newCourseSks), 2),
+            praktek: Math.max(parseInt(newCourseSks) - 2, 0),
+            kurikulum_id: kurikulum?.id || null,
+            description: `Mata kuliah ${newCourseName}`,
+          }).select("id").single();
+        if (ce) throw ce;
+        courseId = nc.id;
+      }
+
+      const { error: cle } = await supabase.from("classes").insert({
+        course_id: courseId, class_name: newCourseClass,
+        semester: "Ganjil 2025/2026",
+        lecturer_id: lecturerUser.id, status: "active",
+      });
+      if (cle) throw cle;
+
+      await fetchData();
+      resetCourseForm();
+    } catch (err: any) {
+      alert("Gagal menambahkan kelas: " + err.message);
+    }
+  };
+
+  const resetCourseForm = () => {
     setNewCourseName("");
     setNewCourseCode("");
     setCourseSuccessMessage("Mata kuliah baru berhasil didaftarkan ke sistem!");
     setTimeout(() => setCourseSuccessMessage(""), 3000);
   };
 
-  const handleEnrollStudent = () => {
+  const handleEnrollStudent = async () => {
     if (!selectedStudentId || !selectedCourseId) return;
-
     const studentDetail = systemUsers.find((u) => u.id === selectedStudentId);
     if (!studentDetail) return;
 
-    const newEnroll: Enrollment = {
-      courseId: selectedCourseId,
-      studentId: selectedStudentId,
-      studentName: studentDetail.name,
-      nim: studentDetail.nim_nip || "220102xxx",
-    };
+    if (!isSupabaseConfigured) {
+      setEnrollments((prev) => [...prev, {
+        courseId: selectedCourseId, studentId: selectedStudentId,
+        studentName: studentDetail.name, nim: studentDetail.nim_nip || "-",
+      }]);
+      setSelectedStudentId("");
+      return;
+    }
 
-    setEnrollments((prev) => [...prev, newEnroll]);
-    setSelectedStudentId("");
+    try {
+      const { error } = await supabase.from("enrollments").insert({
+        student_id: selectedStudentId, class_id: selectedCourseId, status: "active",
+      });
+      if (error) throw error;
+      await fetchData();
+      setSelectedStudentId("");
+    } catch (err: any) {
+      alert("Gagal mendaftarkan: " + err.message);
+    }
   };
 
-  const handleUnenrollStudent = (studentId: string) => {
-    setEnrollments((prev) =>
-      prev.filter((e) => !(e.courseId === selectedCourseId && e.studentId === studentId))
-    );
+  const handleUnenrollStudent = async (studentId: string) => {
+    if (!isSupabaseConfigured) {
+      setEnrollments((prev) =>
+        prev.filter((e) => !(e.courseId === selectedCourseId && e.studentId === studentId))
+      );
+      return;
+    }
+    try {
+      const { error } = await supabase.from("enrollments").delete()
+        .match({ student_id: studentId, class_id: selectedCourseId });
+      if (error) throw error;
+      await fetchData();
+    } catch (err: any) {
+      alert("Gagal mengeluarkan: " + err.message);
+    }
   };
 
-  // Move student between classes (TI-3A <-> TI-3B mockup)
   const handleMoveClass = (studentId: string) => {
     const activeEnrollment = enrollments.find(
       (e) => e.courseId === selectedCourseId && e.studentId === studentId
     );
     if (!activeEnrollment) return;
-
     const currentCourse = courses.find((c) => c.id === selectedCourseId);
     if (!currentCourse) return;
-
-    // Find the equivalent course code in a different class
     const otherClassCourse = courses.find(
       (c) => c.code === currentCourse.code && c.id !== currentCourse.id
     );
-
     if (otherClassCourse) {
       setEnrollments((prev) =>
-        prev.map((e) => {
-          if (e.courseId === selectedCourseId && e.studentId === studentId) {
-            return {
-              ...e,
-              courseId: otherClassCourse.id,
-            };
-          }
-          return e;
-        })
+        prev.map((e) =>
+          e.courseId === selectedCourseId && e.studentId === studentId
+            ? { ...e, courseId: otherClassCourse.id }
+            : e
+        )
       );
-      alert(`Berhasil memindahkan kelas ${activeEnrollment.studentName} ke ${otherClassCourse.class_name}`);
+      alert(`Berhasil memindahkan ${activeEnrollment.studentName} ke ${otherClassCourse.class_name}`);
     } else {
-      alert("Tidak ditemukan kelas paralel (paralel class) untuk mata kuliah ini di database.");
+      alert("Tidak ditemukan kelas paralel untuk mata kuliah ini.");
     }
   };
 
-  // CSV bulk import simulation
   const handleCsvSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setCsvFileName(file.name);
       setCsvFileSelected(true);
       setCsvImportReport(null);
-
-      // Simulate parsing
       setCsvPreviewData([
         { no: 1, nim: "220102010", name: "Eka Saputra", target: "Pemrograman Web (CS-101)" },
         { no: 2, nim: "220102011", name: "Fajar Bahari", target: "Pemrograman Web (CS-101)" },
@@ -230,22 +348,15 @@ export default function StaffDashboardClient({
 
     // Add these students to system users and enrollments
     const newStudents: User[] = [
-      { id: "STU-CSV-1", name: "Eka Saputra", email: "eka@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102010" },
-      { id: "STU-CSV-2", name: "Fajar Bahari", email: "fajar@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102011" },
-      { id: "STU-CSV-3", name: "Gita Lestari", email: "gita@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102012" },
-      { id: "STU-CSV-4", name: "Haris Fadillah", email: "haris@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102013" },
+      { id: `csv-${Date.now()}`, name: "Eka Saputra", email: "eka@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102010" },
+      { id: `csv-${Date.now() + 1}`, name: "Fajar Bahari", email: "fajar@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102011" },
+      { id: `csv-${Date.now() + 2}`, name: "Gita Lestari", email: "gita@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102012" },
+      { id: `csv-${Date.now() + 3}`, name: "Haris Fadillah", email: "haris@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102013" },
     ];
-
     setSystemUsers((prev) => [...prev, ...newStudents]);
-
-    const newEnrolls: Enrollment[] = newStudents.map((s) => ({
-      courseId: "CS-101",
-      studentId: s.id,
-      studentName: s.name,
-      nim: s.nim_nip || "",
-    }));
-
-    setEnrollments((prev) => [...prev, ...newEnrolls]);
+    setEnrollments((prev) => [...prev, ...newStudents.map((s) => ({
+      courseId: "CS-101", studentId: s.id, studentName: s.name, nim: s.nim_nip || "",
+    }))]);
     setCsvImporting(false);
     setCsvImportReport({
       total: 4,
@@ -259,26 +370,51 @@ export default function StaffDashboardClient({
     setCsvImportProgress(0);
   };
 
-  const handleRegisterIndividual = (e: React.FormEvent) => {
+  const handleRegisterIndividual = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName || !regEmail || !regNimNip) return;
 
-    const newUser: User = {
-      id: `${regRole.toUpperCase()}-${Date.now()}`,
-      name: regName,
-      email: regEmail,
-      role: regRole,
-      nim_nip: regNimNip,
-      phone: regPhone,
-    };
+    if (!isSupabaseConfigured) {
+      setSystemUsers((prev) => [{
+        id: `${regRole.toUpperCase()}-${Date.now()}`,
+        name: regName, email: regEmail, role: regRole,
+        nim_nip: regNimNip, phone: regPhone,
+      }, ...prev]);
+      resetRegForm();
+      return;
+    }
 
-    setSystemUsers((prev) => [newUser, ...prev]);
-    setRegName("");
-    setRegEmail("");
-    setRegNimNip("");
-    setRegPhone("");
-    setRegSuccessMessage(`Pengguna dengan nama ${regName} berhasil didaftarkan!`);
+    try {
+      const { error } = await supabase.from("users").insert({
+        name: regName, email: regEmail, role: regRole,
+        nim_nip: regNimNip, password: "12345678",
+      });
+      if (error) throw error;
+      await fetchData();
+      resetRegForm();
+    } catch (err: any) {
+      alert("Gagal mendaftarkan: " + err.message);
+    }
+  };
+
+  const resetRegForm = () => {
+    setRegName(""); setRegEmail(""); setRegNimNip(""); setRegPhone("");
+    setRegSuccessMessage(`Pengguna ${regName} berhasil didaftarkan!`);
     setTimeout(() => setRegSuccessMessage(""), 3000);
+  };
+
+  const handleDeleteCourse = async (courseId: string) => {
+    if (!isSupabaseConfigured) {
+      setCourses((prev) => prev.filter((c) => c.id !== courseId));
+      return;
+    }
+    try {
+      const { error } = await supabase.from("classes").delete().eq("id", courseId);
+      if (error) throw error;
+      await fetchData();
+    } catch (err: any) {
+      alert("Gagal menghapus kelas: " + err.message);
+    }
   };
 
   return (
@@ -456,7 +592,7 @@ export default function StaffDashboardClient({
                           <td className="p-3 text-ink2">{c.lecturer}</td>
                           <td className="p-3 text-right">
                             <button
-                              onClick={() => setCourses((prev) => prev.filter((item) => item.id !== c.id))}
+                              onClick={() => handleDeleteCourse(c.id)}
                               className="text-danger hover:underline font-bold text-[11px] cursor-pointer"
                             >
                               Hapus

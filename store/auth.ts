@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { AuthState, LoginCredentials, User } from '@/types/auth';
-import { mockUsers } from '@/data/users';
 import { createClient } from '@/lib/supabase/client';
 
 function saveSession(user: User) {
@@ -42,25 +41,22 @@ export const useAuthStore = create<AuthState>((set) => ({
         set({ isLoading: true });
 
         if (!isSupabaseConfigured) {
-            // Fallback ke mock login jika Supabase belum dikonfigurasi
             await new Promise((r) => setTimeout(r, 800));
 
-            const matched = mockUsers.find(
-                (u) => u.email === credentials.email,
-            );
-
-            if (!matched) {
+            if (!credentials.email || credentials.password.length < 8) {
                 set({ isLoading: false });
                 return { success: false, error: 'Email atau password salah' };
             }
 
-            if (credentials.password.length < 8) {
-                set({ isLoading: false });
-                return { success: false, error: 'Email atau password salah' };
-            }
-
-            saveSession(matched);
-            set({ user: matched, isAuthenticated: true, isLoading: false });
+            const devUser: User = {
+                id: `dev-${Date.now()}`,
+                name: credentials.email.split('@')[0],
+                email: credentials.email,
+                role: 'admin',
+                nim_nip: '0000000000',
+            };
+            saveSession(devUser);
+            set({ user: devUser, isAuthenticated: true, isLoading: false });
             return { success: true };
         }
 

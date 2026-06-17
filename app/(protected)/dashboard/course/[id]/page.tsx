@@ -17,6 +17,7 @@ export default async function CourseDetailPage(props: {
     let dbModules = undefined;
     let dbAssignments = undefined;
     let dbSubmissions = undefined;
+    let dbDiscussions = undefined;
 
     if (authUser) {
         try {
@@ -29,11 +30,18 @@ export default async function CourseDetailPage(props: {
                     class_name,
                     semester,
                     status,
+                    day_of_week,
+                    start_time,
+                    end_time,
+                    room,
                     courses (
                         id,
                         name,
                         code,
                         sks,
+                        teori,
+                        praktek,
+                        kelompok_mk,
                         description
                     ),
                     users (
@@ -57,6 +65,13 @@ export default async function CourseDetailPage(props: {
                     class_name: cls.class_name,
                     semester: cls.semester,
                     sks: c?.sks || 0,
+                    teori: c?.teori || 0,
+                    praktek: c?.praktek || 0,
+                    kelompok_mk: c?.kelompok_mk || 'Wajib Program Studi',
+                    day_of_week: cls.day_of_week || 'Senin',
+                    start_time: cls.start_time || '08:00:00',
+                    end_time: cls.end_time || '10:30:00',
+                    room: cls.room || 'Ruang H.4.1',
                     lecturer: u?.name || 'Dr. Budi Santoso',
                     description: c?.description || '',
                     status: cls.status,
@@ -123,6 +138,25 @@ export default async function CourseDetailPage(props: {
                     gradedAt: s.graded_at,
                 }));
             }
+            // Fetch discussions for this class
+            const { data: discussions } = await supabase
+                .from('discussions')
+                .select('*')
+                .eq('class_id', courseId)
+                .order('created_at', { ascending: false });
+
+            if (discussions) {
+                dbDiscussions = discussions.map((d: any) => ({
+                    id: d.id,
+                    courseId: d.class_id,
+                    title: d.title,
+                    content: d.content,
+                    authorName: d.author_name,
+                    repliesCount: d.replies_count || 0,
+                    date: d.created_at,
+                    replies: d.replies || [],
+                }));
+            }
         } catch (err) {
             console.error(
                 'Gagal mengambil data detail course dari Supabase:',
@@ -145,6 +179,7 @@ export default async function CourseDetailPage(props: {
                 dbModules={dbModules}
                 dbAssignments={dbAssignments}
                 dbSubmissions={dbSubmissions}
+                dbDiscussions={dbDiscussions}
             />
         </Suspense>
     );

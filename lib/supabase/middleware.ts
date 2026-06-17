@@ -31,6 +31,12 @@ export async function updateSession(request: NextRequest) {
                 );
             },
         },
+        cookieOptions: {
+            maxAge: 60 * 60 * 24, // 24 jam dalam detik (1 hari) untuk keamanan session
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+        },
     });
 
     // IMPORTANT: Avoid writing any logic between createServerClient and

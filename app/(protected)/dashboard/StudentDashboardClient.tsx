@@ -4,13 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
-import { mockCourses } from '@/data/courses';
-import {
-    mockAssignments,
-    mockCalendarEvents,
-    mockAnnouncements,
-    mockSubmissions,
-} from '@/data/mockData';
 import { Card } from '@/components/ui/card';
 
 const courseCardThemes = [
@@ -109,24 +102,11 @@ export default function StudentDashboardClient({
     const { user: localUser } = useAuthStore();
     const activeUser = dbUser || localUser;
 
-    const coursesToUse =
-        dbCourses && dbCourses.length > 0 ? dbCourses : mockCourses;
-    const announcementsToUse =
-        dbAnnouncements && dbAnnouncements.length > 0
-            ? dbAnnouncements
-            : mockAnnouncements;
-    const calendarEventsToUse =
-        dbCalendarEvents && dbCalendarEvents.length > 0
-            ? dbCalendarEvents
-            : mockCalendarEvents;
-    const assignmentsToUse =
-        dbAssignments && dbAssignments.length > 0
-            ? dbAssignments
-            : mockAssignments;
-    const submissionsToUse =
-        dbSubmissions && dbSubmissions.length > 0
-            ? dbSubmissions
-            : mockSubmissions;
+    const coursesToUse = dbCourses || [];
+    const announcementsToUse = dbAnnouncements || [];
+    const calendarEventsToUse = dbCalendarEvents || [];
+    const assignmentsToUse = dbAssignments || [];
+    const submissionsToUse = dbSubmissions || [];
 
     const [searchTerm, setSearchTerm] = useState('');
     const [courseFilter, setCourseFilter] = useState<
@@ -305,7 +285,7 @@ export default function StudentDashboardClient({
                                             key={course.id}
                                             href={`/dashboard/course/${course.id}`}
                                         >
-                                            <Card className="group flex flex-col justify-between min-h-52 p-0 overflow-hidden hover:border-iris-200 cursor-pointer transition-all duration-300 shadow-xs hover:shadow-md bg-surface border border-border rounded-xl">
+                                            <Card className="group flex flex-col justify-between min-h-[250px] p-0 overflow-hidden hover:border-iris-200 cursor-pointer transition-all duration-300 shadow-xs hover:shadow-md bg-surface border border-border rounded-xl">
                                                 {/* Vector Banner */}
                                                 <div
                                                     className={cn(
@@ -349,19 +329,36 @@ export default function StudentDashboardClient({
                                                 {/* Bottom Information */}
                                                 <div className="p-4 flex-1 flex flex-col justify-between">
                                                     <div>
-                                                        <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
-                                                            {course.semester ||
-                                                                'Ganjil 2025/2026'}{' '}
-                                                            &bull; {course.sks}{' '}
-                                                            SKS
-                                                        </span>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
+                                                                {course.semester ||
+                                                                    'Ganjil 2025/2026'}{' '}
+                                                                &bull; {course.sks}{' '}
+                                                                SKS
+                                                            </span>
+                                                            {course.kelompok_mk && (
+                                                                <span className="text-[9px] bg-iris-50 text-iris-600 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
+                                                                    {course.kelompok_mk}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <h3 className="text-[14px] font-bold text-ink group-hover:text-iris-600 transition-colors line-clamp-2 mt-1 leading-snug">
                                                             {course.name}
                                                         </h3>
                                                     </div>
-                                                    <p className="text-[11px] text-muted line-clamp-1 mt-2">
-                                                        {course.lecturer}
-                                                    </p>
+                                                    <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
+                                                        <p className="text-[11px] text-muted line-clamp-1">
+                                                            Dosen: <span className="font-medium text-ink">{course.lecturer}</span>
+                                                        </p>
+                                                        {course.day_of_week && (
+                                                            <div className="flex items-center gap-1.5 text-[10px] text-muted font-medium">
+                                                                <Clock size={12} className="text-iris-500 shrink-0" />
+                                                                <span className="capitalize">{course.day_of_week}, {course.start_time?.substring(0, 5)}-{course.end_time?.substring(0, 5)}</span>
+                                                                <span className="text-muted/40">&bull;</span>
+                                                                <span className="font-bold text-ink">{course.room}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </Card>
                                         </Link>
@@ -557,7 +554,7 @@ export default function StudentDashboardClient({
                                         key={course.id}
                                         href={`/dashboard/course/${course.id}`}
                                     >
-                                        <Card className="group flex flex-col justify-between min-h-52 p-0 overflow-hidden hover:border-iris-200 cursor-pointer transition-all duration-300 shadow-xs hover:shadow-md bg-surface border border-border rounded-xl">
+                                        <Card className="group flex flex-col justify-between min-h-[250px] p-0 overflow-hidden hover:border-iris-200 cursor-pointer transition-all duration-300 shadow-xs hover:shadow-md bg-surface border border-border rounded-xl">
                                             {/* Vector Banner */}
                                             <div
                                                 className={cn(
@@ -610,17 +607,34 @@ export default function StudentDashboardClient({
                                             {/* Bottom Information */}
                                             <div className="p-4 flex-1 flex flex-col justify-between">
                                                 <div>
-                                                    <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
-                                                        {course.code} &bull;{' '}
-                                                        {course.sks} SKS
-                                                    </span>
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
+                                                            {course.code} &bull;{' '}
+                                                            {course.sks} SKS
+                                                        </span>
+                                                        {course.kelompok_mk && (
+                                                            <span className="text-[9px] bg-iris-50 text-iris-600 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
+                                                                {course.kelompok_mk}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <h3 className="text-[14px] font-bold text-ink group-hover:text-iris-600 transition-colors line-clamp-2 mt-1 leading-snug">
                                                         {course.name}
                                                     </h3>
                                                 </div>
-                                                <p className="text-[11px] text-muted line-clamp-1 mt-2">
-                                                    {course.lecturer}
-                                                </p>
+                                                <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
+                                                    <p className="text-[11px] text-muted line-clamp-1">
+                                                        Dosen: <span className="font-medium text-ink">{course.lecturer}</span>
+                                                    </p>
+                                                    {course.day_of_week && (
+                                                        <div className="flex items-center gap-1.5 text-[10px] text-muted font-medium">
+                                                            <Clock size={12} className="text-iris-500 shrink-0" />
+                                                            <span className="capitalize">{course.day_of_week}, {course.start_time?.substring(0, 5)}-{course.end_time?.substring(0, 5)}</span>
+                                                            <span className="text-muted/40">&bull;</span>
+                                                            <span className="font-bold text-ink">{course.room}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </Card>
                                     </Link>

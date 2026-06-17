@@ -85,6 +85,7 @@ export function Sidebar() {
                         tab: 'overview',
                         icon: LayoutDashboard,
                     },
+                    { label: 'Kelola Kelas', tab: 'courses', icon: BookOpen },
                     { label: 'Kelola User', tab: 'users', icon: Users },
                     { label: 'Kalender', tab: 'calendar', icon: Calendar },
                     { label: 'Laporan', tab: 'reports', icon: FileText },

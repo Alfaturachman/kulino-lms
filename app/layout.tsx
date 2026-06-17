@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DM_Sans, DM_Mono } from 'next/font/google';
+import { AuthSync } from '@/components/auth-sync';
 import './globals.css';
 
 const dmSans = DM_Sans({
@@ -30,7 +31,10 @@ export default function RootLayout({
             lang="id"
             className={`${dmSans.variable} ${dmMono.variable} h-full antialiased`}
         >
-            <body className="min-h-full">{children}</body>
+            <body className="min-h-full">
+                <AuthSync />
+                {children}
+            </body>
         </html>
     );
 }

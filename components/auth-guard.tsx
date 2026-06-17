@@ -3,28 +3,50 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
+import { createClient } from '@/lib/supabase/client';
+
+const isSupabaseConfigured =
+    !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http');
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { user, isAuthenticated } = useAuthStore();
-    const [mounted, setMounted] = useState(false);
+    const [verifying, setVerifying] = useState(true);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setMounted(true);
-        }, 0);
-        return () => clearTimeout(timer);
+        async function checkSession() {
+            if (isSupabaseConfigured) {
+                try {
+                    const supabase = createClient();
+                    const {
+                        data: { user: supabaseUser },
+                    } = await supabase.auth.getUser();
+                    if (
+                        !supabaseUser &&
+                        useAuthStore.getState().isAuthenticated
+                    ) {
+                        // Jika session Supabase sudah tidak ada tetapi state lokal masih aktif, log out
+                        await useAuthStore.getState().logout();
+                    }
+                } catch (err) {
+                    console.error('Gagal memverifikasi session Supabase:', err);
+                }
+            }
+            setVerifying(false);
+        }
+        checkSession();
     }, []);
 
     useEffect(() => {
-        if (mounted && !isAuthenticated) {
+        if (!verifying && !isAuthenticated) {
             router.push('/login');
         }
-    }, [mounted, isAuthenticated, router]);
+    }, [verifying, isAuthenticated, router]);
 
     useEffect(() => {
-        if (mounted && isAuthenticated && user) {
+        if (!verifying && isAuthenticated && user) {
             if (pathname.startsWith('/admin') && user.role !== 'admin') {
                 router.push(
                     user.role === 'dosen'
@@ -65,10 +87,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                 );
             }
         }
-    }, [mounted, isAuthenticated, user, pathname, router]);
+    }, [verifying, isAuthenticated, user, pathname, router]);
 
-    if (!mounted) {
-        return null;
+    if (verifying) {
+        return (
+            <div className="flex h-screen w-screen items-center justify-center bg-surface3">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-iris-500 border-t-transparent"></div>
+            </div>
+        );
     }
 
     if (!isAuthenticated) {
