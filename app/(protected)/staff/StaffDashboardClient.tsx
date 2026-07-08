@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import { Course } from "@/types/course";
 import { User, Role } from "@/types/auth";
+import { createUserInAuth } from "../admin/actions";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -328,52 +329,74 @@ export default function StaffDashboardClient({
       setCsvFileName(file.name);
       setCsvFileSelected(true);
       setCsvImportReport(null);
-      setCsvPreviewData([
-        { no: 1, nim: "220102010", name: "Eka Saputra", target: "Pemrograman Web (CS-101)" },
-        { no: 2, nim: "220102011", name: "Fajar Bahari", target: "Pemrograman Web (CS-101)" },
-        { no: 3, nim: "220102012", name: "Gita Lestari", target: "Pemrograman Web (CS-101)" },
-        { no: 4, nim: "220102013", name: "Haris Fadillah", target: "Pemrograman Web (CS-101)" },
-      ]);
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (!text) return;
+
+        const lines = text.split(/\r?\n/).filter(line => line.trim() !== "");
+        if (lines.length <= 1) {
+          alert("File CSV kosong atau tidak memiliki baris data (baris header diperlukan)");
+          return;
+        }
+
+        const parsedRows: CsvPreviewRow[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const columns = lines[i].split(",").map(c => c.trim().replace(/^["']|["']$/g, ""));
+          if (columns.length >= 3) {
+            const [nim, name, email] = columns;
+            parsedRows.push({
+              no: i,
+              nim: nim,
+              name: name,
+              target: email
+            });
+          }
+        }
+        setCsvPreviewData(parsedRows);
+      };
+      reader.readAsText(file);
     }
   };
 
   const handleProcessCsvImport = async () => {
+    if (csvPreviewData.length === 0) return;
     setCsvImporting(true);
     setCsvImportProgress(10);
 
-    for (let p = 25; p <= 100; p += 25) {
-      await new Promise((r) => setTimeout(r, 250));
-      setCsvImportProgress(p);
-    }
-
-    const newStudentsData = [
-      { name: "Eka Saputra", email: "eka@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102010", password: "hashed_by_supabase_auth" },
-      { name: "Fajar Bahari", email: "fajar@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102011", password: "hashed_by_supabase_auth" },
-      { name: "Gita Lestari", email: "gita@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102012", password: "hashed_by_supabase_auth" },
-      { name: "Haris Fadillah", email: "haris@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102013", password: "hashed_by_supabase_auth" },
-    ];
+    const totalCount = csvPreviewData.length;
+    let successCount = 0;
+    let failedCount = 0;
 
     if (isSupabaseConfigured) {
       try {
-        const { data: insertedUsers, error: usersError } = await supabase
-          .from('users')
-          .insert(newStudentsData)
-          .select();
+        for (let i = 0; i < csvPreviewData.length; i++) {
+          const row = csvPreviewData[i];
+          try {
+            const { id: authUserId } = await createUserInAuth({
+              name: row.name,
+              email: row.target,
+              role: "mahasiswa",
+              nim_nip: row.nim
+            });
 
-        if (usersError) throw usersError;
-
-        const classId = 'c101c101-c101-c101-c101-c101c101c101';
-        if (insertedUsers && insertedUsers.length > 0) {
-          const enrollList = insertedUsers.map((u: any) => ({
-            student_id: u.id,
-            class_id: classId,
-            status: 'active'
-          }));
-          const { error: enrollError } = await supabase
-            .from('enrollments')
-            .insert(enrollList);
-          
-          if (enrollError) throw enrollError;
+            if (authUserId && selectedCourseId) {
+              const { error: enrollError } = await supabase
+                .from('enrollments')
+                .insert({
+                  student_id: authUserId,
+                  class_id: selectedCourseId,
+                  status: 'active'
+                });
+              if (enrollError) throw enrollError;
+            }
+            successCount++;
+          } catch (rowErr) {
+            console.error(`Gagal mendaftarkan baris ${i + 1}:`, rowErr);
+            failedCount++;
+          }
+          setCsvImportProgress(Math.min(90, Math.floor(((i + 1) / totalCount) * 100)));
         }
 
         await fetchData();
@@ -383,30 +406,39 @@ export default function StaffDashboardClient({
         return;
       }
     } else {
-      const newStudents: User[] = newStudentsData.map((s, idx) => ({
-        id: `csv-${Date.now() + idx}`,
+      for (let p = 25; p <= 100; p += 25) {
+        await new Promise((r) => setTimeout(r, 200));
+        setCsvImportProgress(p);
+      }
+
+      const newStudents: User[] = csvPreviewData.map((s) => ({
+        id: `csv-${Date.now()}-${s.no}`,
         name: s.name,
-        email: s.email,
-        role: s.role as Role,
-        nim_nip: s.nim_nip
+        email: s.target,
+        role: "mahasiswa",
+        nim_nip: s.nim
       }));
       setSystemUsers((prev) => [...prev, ...newStudents]);
       setEnrollments((prev) => [...prev, ...newStudents.map((s) => ({
-        courseId: "CS-101", studentId: s.id, studentName: s.name, nim: s.nim_nip || "",
+        courseId: selectedCourseId || "CS-101",
+        studentId: s.id,
+        studentName: s.name,
+        nim: s.nim_nip || "",
       }))]);
+      successCount = totalCount;
     }
 
+    setCsvImportProgress(100);
     setCsvImporting(false);
     setCsvImportReport({
-      total: 4,
-      success: 4,
-      failed: 0,
+      total: totalCount,
+      success: successCount,
+      failed: failedCount,
       duplicate: 0,
     });
     setCsvFileSelected(false);
     setCsvFileName("");
     setCsvPreviewData([]);
-    setCsvImportProgress(0);
   };
 
   const handleRegisterIndividual = async (e: React.FormEvent) => {
@@ -424,11 +456,12 @@ export default function StaffDashboardClient({
     }
 
     try {
-      const { error } = await supabase.from("users").insert({
-        name: regName, email: regEmail, role: regRole,
-        nim_nip: regNimNip, password: "12345678",
+      await createUserInAuth({
+        name: regName,
+        email: regEmail,
+        role: regRole,
+        nim_nip: regNimNip
       });
-      if (error) throw error;
       await fetchData();
       resetRegForm();
     } catch (err: any) {
