@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import { Course } from "@/types/course";
-import { User } from "@/types/auth";
+import { User, Role } from "@/types/auth";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -346,17 +346,56 @@ export default function StaffDashboardClient({
       setCsvImportProgress(p);
     }
 
-    // Add these students to system users and enrollments
-    const newStudents: User[] = [
-      { id: `csv-${Date.now()}`, name: "Eka Saputra", email: "eka@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102010" },
-      { id: `csv-${Date.now() + 1}`, name: "Fajar Bahari", email: "fajar@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102011" },
-      { id: `csv-${Date.now() + 2}`, name: "Gita Lestari", email: "gita@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102012" },
-      { id: `csv-${Date.now() + 3}`, name: "Haris Fadillah", email: "haris@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102013" },
+    const newStudentsData = [
+      { name: "Eka Saputra", email: "eka@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102010", password: "hashed_by_supabase_auth" },
+      { name: "Fajar Bahari", email: "fajar@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102011", password: "hashed_by_supabase_auth" },
+      { name: "Gita Lestari", email: "gita@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102012", password: "hashed_by_supabase_auth" },
+      { name: "Haris Fadillah", email: "haris@mhs.dinus.ac.id", role: "mahasiswa", nim_nip: "220102013", password: "hashed_by_supabase_auth" },
     ];
-    setSystemUsers((prev) => [...prev, ...newStudents]);
-    setEnrollments((prev) => [...prev, ...newStudents.map((s) => ({
-      courseId: "CS-101", studentId: s.id, studentName: s.name, nim: s.nim_nip || "",
-    }))]);
+
+    if (isSupabaseConfigured) {
+      try {
+        const { data: insertedUsers, error: usersError } = await supabase
+          .from('users')
+          .insert(newStudentsData)
+          .select();
+
+        if (usersError) throw usersError;
+
+        const classId = 'c101c101-c101-c101-c101-c101c101c101';
+        if (insertedUsers && insertedUsers.length > 0) {
+          const enrollList = insertedUsers.map((u: any) => ({
+            student_id: u.id,
+            class_id: classId,
+            status: 'active'
+          }));
+          const { error: enrollError } = await supabase
+            .from('enrollments')
+            .insert(enrollList);
+          
+          if (enrollError) throw enrollError;
+        }
+
+        await fetchData();
+      } catch (err: any) {
+        alert("Gagal melakukan impor CSV: " + err.message);
+        setCsvImporting(false);
+        return;
+      }
+    } else {
+      const newStudents: User[] = newStudentsData.map((s, idx) => ({
+        id: `csv-${Date.now() + idx}`,
+        name: s.name,
+        email: s.email,
+        role: s.role as Role,
+        nim_nip: s.nim_nip
+      }));
+      setSystemUsers((prev) => [...prev, ...newStudents]);
+      setEnrollments((prev) => [...prev, ...newStudents.map((s) => ({
+        courseId: "CS-101", studentId: s.id, studentName: s.name, nim: s.nim_nip || "",
+      }))]);
+    }
+
     setCsvImporting(false);
     setCsvImportReport({
       total: 4,

@@ -88,6 +88,7 @@ interface StudentDashboardClientProps {
     dbCalendarEvents?: any[];
     dbAssignments?: any[];
     dbSubmissions?: any[];
+    dbGrades?: any[];
 }
 
 export default function StudentDashboardClient({
@@ -98,6 +99,7 @@ export default function StudentDashboardClient({
     dbCalendarEvents,
     dbAssignments,
     dbSubmissions,
+    dbGrades,
 }: StudentDashboardClientProps) {
     const { user: localUser } = useAuthStore();
     const activeUser = dbUser || localUser;
@@ -333,12 +335,14 @@ export default function StudentDashboardClient({
                                                             <span className="text-[10px] font-mono text-muted uppercase tracking-wider">
                                                                 {course.semester ||
                                                                     'Ganjil 2025/2026'}{' '}
-                                                                &bull; {course.sks}{' '}
-                                                                SKS
+                                                                &bull;{' '}
+                                                                {course.sks} SKS
                                                             </span>
                                                             {course.kelompok_mk && (
                                                                 <span className="text-[9px] bg-iris-50 text-iris-600 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
-                                                                    {course.kelompok_mk}
+                                                                    {
+                                                                        course.kelompok_mk
+                                                                    }
                                                                 </span>
                                                             )}
                                                         </div>
@@ -348,14 +352,42 @@ export default function StudentDashboardClient({
                                                     </div>
                                                     <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
                                                         <p className="text-[11px] text-muted line-clamp-1">
-                                                            Dosen: <span className="font-medium text-ink">{course.lecturer}</span>
+                                                            Dosen:{' '}
+                                                            <span className="font-medium text-ink">
+                                                                {
+                                                                    course.lecturer
+                                                                }
+                                                            </span>
                                                         </p>
                                                         {course.day_of_week && (
                                                             <div className="flex items-center gap-1.5 text-[10px] text-muted font-medium">
-                                                                <Clock size={12} className="text-iris-500 shrink-0" />
-                                                                <span className="capitalize">{course.day_of_week}, {course.start_time?.substring(0, 5)}-{course.end_time?.substring(0, 5)}</span>
-                                                                <span className="text-muted/40">&bull;</span>
-                                                                <span className="font-bold text-ink">{course.room}</span>
+                                                                <Clock
+                                                                    size={12}
+                                                                    className="text-iris-500 shrink-0"
+                                                                />
+                                                                <span className="capitalize">
+                                                                    {
+                                                                        course.day_of_week
+                                                                    }
+                                                                    ,{' '}
+                                                                    {course.start_time?.substring(
+                                                                        0,
+                                                                        5,
+                                                                    )}
+                                                                    -
+                                                                    {course.end_time?.substring(
+                                                                        0,
+                                                                        5,
+                                                                    )}
+                                                                </span>
+                                                                <span className="text-muted/40">
+                                                                    &bull;
+                                                                </span>
+                                                                <span className="font-bold text-ink">
+                                                                    {
+                                                                        course.room
+                                                                    }
+                                                                </span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -614,7 +646,9 @@ export default function StudentDashboardClient({
                                                         </span>
                                                         {course.kelompok_mk && (
                                                             <span className="text-[9px] bg-iris-50 text-iris-600 px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
-                                                                {course.kelompok_mk}
+                                                                {
+                                                                    course.kelompok_mk
+                                                                }
                                                             </span>
                                                         )}
                                                     </div>
@@ -624,14 +658,38 @@ export default function StudentDashboardClient({
                                                 </div>
                                                 <div className="mt-2 space-y-1 border-t border-border/40 pt-2">
                                                     <p className="text-[11px] text-muted line-clamp-1">
-                                                        Dosen: <span className="font-medium text-ink">{course.lecturer}</span>
+                                                        Dosen:{' '}
+                                                        <span className="font-medium text-ink">
+                                                            {course.lecturer}
+                                                        </span>
                                                     </p>
                                                     {course.day_of_week && (
                                                         <div className="flex items-center gap-1.5 text-[10px] text-muted font-medium">
-                                                            <Clock size={12} className="text-iris-500 shrink-0" />
-                                                            <span className="capitalize">{course.day_of_week}, {course.start_time?.substring(0, 5)}-{course.end_time?.substring(0, 5)}</span>
-                                                            <span className="text-muted/40">&bull;</span>
-                                                            <span className="font-bold text-ink">{course.room}</span>
+                                                            <Clock
+                                                                size={12}
+                                                                className="text-iris-500 shrink-0"
+                                                            />
+                                                            <span className="capitalize">
+                                                                {
+                                                                    course.day_of_week
+                                                                }
+                                                                ,{' '}
+                                                                {course.start_time?.substring(
+                                                                    0,
+                                                                    5,
+                                                                )}
+                                                                -
+                                                                {course.end_time?.substring(
+                                                                    0,
+                                                                    5,
+                                                                )}
+                                                            </span>
+                                                            <span className="text-muted/40">
+                                                                &bull;
+                                                            </span>
+                                                            <span className="font-bold text-ink">
+                                                                {course.room}
+                                                            </span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -696,59 +754,61 @@ export default function StudentDashboardClient({
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border/60">
-                                    {/* We render courses with simulated grade components */}
-                                    {[
-                                        {
-                                            code: 'TI301',
-                                            name: 'Pemrograman Web',
-                                            sks: 3,
-                                            tugas: 90,
-                                            uts: 80,
-                                            uas: 85,
-                                            part: 95,
-                                            final: 'A',
-                                        },
-                                        {
-                                            code: 'TI202',
-                                            name: 'Basis Data',
-                                            sks: 3,
-                                            tugas: 85,
-                                            uts: 78,
-                                            uas: 80,
-                                            part: 90,
-                                            final: 'AB',
-                                        },
-                                        {
-                                            code: 'TI203',
-                                            name: 'Struktur Data & Algoritma',
-                                            sks: 4,
-                                            tugas: 95,
-                                            uts: 92,
-                                            uas: 88,
-                                            part: 100,
-                                            final: 'A',
-                                        },
-                                        {
-                                            code: 'TI304',
-                                            name: 'Jaringan Komputer',
-                                            sks: 3,
-                                            tugas: 75,
-                                            uts: 70,
-                                            uas: 72,
-                                            part: 85,
-                                            final: 'B',
-                                        },
-                                        {
-                                            code: 'TI107',
-                                            name: 'Matematika Diskrit',
-                                            sks: 3,
-                                            tugas: 92,
-                                            uts: 85,
-                                            uas: 90,
-                                            part: 90,
-                                            final: 'A',
-                                        },
-                                    ].map((grade, idx) => (
+                                    {(dbGrades && dbGrades.length > 0
+                                        ? dbGrades
+                                        : [
+                                              {
+                                                  code: 'TI301',
+                                                  name: 'Pemrograman Web',
+                                                  sks: 3,
+                                                  tugas: 90,
+                                                  uts: 80,
+                                                  uas: 85,
+                                                  part: 95,
+                                                  final: 'A',
+                                              },
+                                              {
+                                                  code: 'TI202',
+                                                  name: 'Basis Data',
+                                                  sks: 3,
+                                                  tugas: 85,
+                                                  uts: 78,
+                                                  uas: 80,
+                                                  part: 90,
+                                                  final: 'AB',
+                                              },
+                                              {
+                                                  code: 'TI203',
+                                                  name: 'Struktur Data & Algoritma',
+                                                  sks: 4,
+                                                  tugas: 95,
+                                                  uts: 92,
+                                                  uas: 88,
+                                                  part: 100,
+                                                  final: 'A',
+                                              },
+                                              {
+                                                  code: 'TI304',
+                                                  name: 'Jaringan Komputer',
+                                                  sks: 3,
+                                                  tugas: 75,
+                                                  uts: 70,
+                                                  uas: 72,
+                                                  part: 85,
+                                                  final: 'B',
+                                              },
+                                              {
+                                                  code: 'TI107',
+                                                  name: 'Matematika Diskrit',
+                                                  sks: 3,
+                                                  tugas: 92,
+                                                  uts: 85,
+                                                  uas: 90,
+                                                  part: 90,
+                                                  final: 'A',
+                                              },
+                                          ]
+                                    ).map((grade, idx) => (
                                         <tr
                                             key={idx}
                                             className="hover:bg-surface2/30 transition-colors"

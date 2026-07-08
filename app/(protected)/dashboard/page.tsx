@@ -19,6 +19,7 @@ export default async function DashboardPage(props: {
   let dbCalendarEvents = undefined;
   let dbAssignments = undefined;
   let dbSubmissions = undefined;
+  let dbGrades = undefined;
 
   if (authUser) {
     try {
@@ -193,6 +194,46 @@ export default async function DashboardPage(props: {
           gradedAt: s.graded_at
         }));
       }
+
+      // Ambil grades
+      const { data: gradesData } = await supabase
+        .from('grades')
+        .select(`
+          id,
+          assignment_score,
+          midterm_score,
+          final_score,
+          participation_score,
+          final_grade_letter,
+          classes (
+            id,
+            courses (
+              code,
+              name,
+              sks
+            )
+          )
+        `)
+        .eq('student_id', authUser.id);
+      
+      if (gradesData) {
+        dbGrades = gradesData.map((g: any) => {
+          const cls = g.classes;
+          const c = Array.isArray(cls?.courses) ? cls.courses[0] : cls?.courses;
+          return {
+            id: g.id,
+            classId: cls?.id || '',
+            code: c?.code || 'TI-MOCK',
+            name: c?.name || 'Mata Kuliah',
+            sks: c?.sks || 3,
+            tugas: g.assignment_score || 0,
+            uts: g.midterm_score || 0,
+            uas: g.final_score || 0,
+            part: g.participation_score || 0,
+            final: g.final_grade_letter || 'TBD',
+          };
+        });
+      }
     } catch (err) {
       console.error("Gagal mengambil data dari Supabase, menggunakan data statis local:", err);
     }
@@ -212,6 +253,7 @@ export default async function DashboardPage(props: {
         dbCalendarEvents={dbCalendarEvents}
         dbAssignments={dbAssignments}
         dbSubmissions={dbSubmissions}
+        dbGrades={dbGrades}
       />
     </Suspense>
   );

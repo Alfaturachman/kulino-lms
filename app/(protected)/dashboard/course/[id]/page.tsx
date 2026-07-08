@@ -141,21 +141,63 @@ export default async function CourseDetailPage(props: {
             // Fetch discussions for this class
             const { data: discussions } = await supabase
                 .from('discussions')
-                .select('*')
+                .select(
+                    `
+                    id,
+                    class_id,
+                    author_id,
+                    title,
+                    content,
+                    date,
+                    users (
+                        name
+                    )
+                `,
+                )
                 .eq('class_id', courseId)
-                .order('created_at', { ascending: false });
+                .order('date', { ascending: false });
 
-            if (discussions) {
-                dbDiscussions = discussions.map((d: any) => ({
-                    id: d.id,
-                    courseId: d.class_id,
-                    title: d.title,
-                    content: d.content,
-                    authorName: d.author_name,
-                    repliesCount: d.replies_count || 0,
-                    date: d.created_at,
-                    replies: d.replies || [],
-                }));
+            if (discussions && discussions.length > 0) {
+                const discussionIds = discussions.map((d: any) => d.id);
+                const { data: replies } = await supabase
+                    .from('discussion_replies')
+                    .select(
+                        `
+                        id,
+                        discussion_id,
+                        author_id,
+                        content,
+                        date,
+                        users (
+                            name
+                        )
+                    `,
+                    )
+                    .in('discussion_id', discussionIds)
+                    .order('date', { ascending: true });
+
+                dbDiscussions = discussions.map((d: any) => {
+                    const discReplies = (replies || [])
+                        .filter((r: any) => r.discussion_id === d.id)
+                        .map((r: any) => ({
+                            id: r.id,
+                            authorName: r.users?.name || 'Ahmad Fauzi',
+                            content: r.content,
+                            date: r.date,
+                        }));
+                    return {
+                        id: d.id,
+                        courseId: d.class_id,
+                        title: d.title,
+                        content: d.content,
+                        authorName: d.users?.name || 'Ahmad Fauzi',
+                        repliesCount: discReplies.length,
+                        date: d.date,
+                        replies: discReplies,
+                    };
+                });
+            } else {
+                dbDiscussions = [];
             }
         } catch (err) {
             console.error(

@@ -49,6 +49,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to see the r
 
 ---
 
+## Developer Documentation
+
+Untuk melihat dokumentasi lengkap mengenai pengembangan sistem, desain basis data, model penanganan error global, petunjuk testing, dan arsitektur kode, silakan merujuk ke **[Developer Handbook (docs/README.md)](docs/README.md)**.
+
+---
+
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)

@@ -171,11 +171,11 @@ export default function LecturerCourseDetailClient({
         .from('submissions')
         .select(`
           id, assignment_id, student_id, file_url,
-          submitted_at, is_late, grade, feedback, graded_at,
+          submitted_at, is_late, version, grade, feedback, graded_at,
           users ( name, nim_nip ),
-          assignments ( title, class_id, courses ( name ) )
+          assignments!inner ( title, class_id )
         `)
-        .in('assignments.class_id', [courseId]);
+        .eq('assignments.class_id', courseId);
 
       if (submissions) {
         setSubmissions(submissions.map((s: any) => ({
@@ -234,22 +234,57 @@ export default function LecturerCourseDetailClient({
   };
 
   // Add material submit
-  const handleAddMaterial = (e: React.FormEvent) => {
+  const handleAddMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!matTitle || !matUrl) return;
 
-    const newModule: Module = {
-      id: `MOD-${Date.now()}`,
-      courseId,
-      title: matTitle,
-      weekNo: parseInt(matWeek),
-      type: matType,
-      contentUrl: matUrl,
-      description: matDesc,
-      isPublished: true,
-    };
+    if (isSupabaseConfigured) {
+      try {
+        const { data, error } = await supabase
+          .from("modules")
+          .insert({
+            class_id: courseId,
+            title: matTitle,
+            week_no: parseInt(matWeek),
+            type: matType,
+            content_url: matUrl,
+            description: matDesc,
+            is_published: true,
+          })
+          .select()
+          .single();
 
-    setModules((prev) => [...prev, newModule]);
+        if (error) throw error;
+
+        const newModule: Module = {
+          id: data.id,
+          courseId,
+          title: data.title,
+          weekNo: data.week_no,
+          type: data.type,
+          contentUrl: data.content_url,
+          description: data.description,
+          isPublished: data.is_published,
+        };
+
+        setModules((prev) => [...prev, newModule]);
+      } catch (err: any) {
+        alert("Gagal menambahkan materi: " + err.message);
+        return;
+      }
+    } else {
+      const newModule: Module = {
+        id: `MOD-${Date.now()}`,
+        courseId,
+        title: matTitle,
+        weekNo: parseInt(matWeek),
+        type: matType,
+        contentUrl: matUrl,
+        description: matDesc,
+        isPublished: true,
+      };
+      setModules((prev) => [...prev, newModule]);
+    }
     
     // Auto expand the week where the material was added
     setExpandedWeeks((prev) => ({ ...prev, [parseInt(matWeek)]: true }));
@@ -262,22 +297,58 @@ export default function LecturerCourseDetailClient({
   };
 
   // Add assignment submit
-  const handleAddAssignment = (e: React.FormEvent) => {
+  const handleAddAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!asmTitle || !asmDesc) return;
 
-    const newAsm: Assignment = {
-      id: `ASM-${Date.now()}`,
-      courseId,
-      title: asmTitle,
-      description: asmDesc,
-      deadline: new Date(asmDeadline).toISOString(),
-      weightPct: parseInt(asmWeight),
-      allowedFormats: asmFormats.split(",").map((f) => f.trim().toLowerCase()),
-      maxSizeMb: 10,
-    };
+    if (isSupabaseConfigured) {
+      try {
+        const allowedFormatsArray = asmFormats.split(",").map((f) => f.trim().toLowerCase());
+        const { data, error } = await supabase
+          .from("assignments")
+          .insert({
+            class_id: courseId,
+            title: asmTitle,
+            description: asmDesc,
+            deadline: new Date(asmDeadline).toISOString(),
+            weight_pct: parseInt(asmWeight),
+            allowed_formats: allowedFormatsArray,
+            max_size_mb: 10,
+          })
+          .select()
+          .single();
 
-    setAssignments((prev) => [...prev, newAsm]);
+        if (error) throw error;
+
+        const newAsm: Assignment = {
+          id: data.id,
+          courseId,
+          title: data.title,
+          description: data.description,
+          deadline: data.deadline,
+          weightPct: data.weight_pct,
+          allowedFormats: data.allowed_formats,
+          maxSizeMb: data.max_size_mb,
+        };
+
+        setAssignments((prev) => [...prev, newAsm]);
+      } catch (err: any) {
+        alert("Gagal menambahkan tugas: " + err.message);
+        return;
+      }
+    } else {
+      const newAsm: Assignment = {
+        id: `ASM-${Date.now()}`,
+        courseId,
+        title: asmTitle,
+        description: asmDesc,
+        deadline: new Date(asmDeadline).toISOString(),
+        weightPct: parseInt(asmWeight),
+        allowedFormats: asmFormats.split(",").map((f) => f.trim().toLowerCase()),
+        maxSizeMb: 10,
+      };
+      setAssignments((prev) => [...prev, newAsm]);
+    }
     
     // Reset Form
     setAsmTitle("");
@@ -285,26 +356,58 @@ export default function LecturerCourseDetailClient({
   };
 
   // Submit Grade
-  const handleSaveGrade = () => {
+  const handleSaveGrade = async () => {
     const score = parseInt(gradeScore);
     if (isNaN(score) || score < 0 || score > 100) {
       alert("Masukkan nilai antara 0-100");
       return;
     }
 
-    setSubmissions((prev) =>
-      prev.map((sub) => {
-        if (sub.id === gradingSubId) {
-          return {
-            ...sub,
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase
+          .from("submissions")
+          .update({
             grade: score,
             feedback: gradeFeedback,
-            gradedAt: new Date().toISOString(),
-          };
-        }
-        return sub;
-      })
-    );
+            graded_at: new Date().toISOString(),
+          })
+          .eq("id", gradingSubId);
+
+        if (error) throw error;
+
+        setSubmissions((prev) =>
+          prev.map((sub) => {
+            if (sub.id === gradingSubId) {
+              return {
+                ...sub,
+                grade: score,
+                feedback: gradeFeedback,
+                gradedAt: new Date().toISOString(),
+              };
+            }
+            return sub;
+          })
+        );
+      } catch (err: any) {
+        alert("Gagal menyimpan nilai: " + err.message);
+        return;
+      }
+    } else {
+      setSubmissions((prev) =>
+        prev.map((sub) => {
+          if (sub.id === gradingSubId) {
+            return {
+              ...sub,
+              grade: score,
+              feedback: gradeFeedback,
+              gradedAt: new Date().toISOString(),
+            };
+          }
+          return sub;
+        })
+      );
+    }
 
     setGradingSubId(null);
     setGradeScore("");
