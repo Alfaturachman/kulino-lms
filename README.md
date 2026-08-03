@@ -96,19 +96,18 @@ npm run build
 
 Untuk informasi teknis mendalam mengenai arsitektur, basis data, dan panduan pengembang, silakan merujuk ke **[Developer Handbook (docs/README.md)](docs/README.md)**:
 
-1. **[00_audit_requirements.md](docs/00_audit_requirements.md)** — Audit Kebutuhan & Analisis Dokumentasi
-2. **[01_brd.md](docs/01_brd.md)** — Business Requirements Document
-3. **[02_prd.md](docs/02_prd.md)** — Product Requirements Document & Feature Matrix
-4. **[03_frd.md](docs/03_frd.md)** — Functional Requirements Document
-5. **[04_srs.md](docs/04_srs.md)** — Software Requirements Specification
-6. **[05_architecture.md](docs/05_architecture.md)** — System Architecture Document
-7. **[06_database.md](docs/06_database.md)** — Database Design Document (PostgreSQL Schema)
-8. **[07_desain.md](docs/07_desain.md)** — UI/UX Design System Guide
-9. **[08_routing.md](docs/08_routing.md)** — Route Architecture & Next.js App Router Structure
-10. **[09_testing.md](docs/09_testing.md)** — Testing Strategy & QA Test Cases
-11. **[10_user_manual.md](docs/10_user_manual.md)** — User Manual / Guidebook
-12. **[12_security.md](docs/12_security.md)** — Security & Access Control Guide
-13. **[14_changelog.md](docs/14_changelog.md)** — Release Notes & Version History
+1. **[01_brd.md](docs/01_brd.md)** — Business Requirements Document
+2. **[02_prd.md](docs/02_prd.md)** — Product Requirements Document & Feature Matrix
+3. **[03_frd.md](docs/03_frd.md)** — Functional Requirements Document
+4. **[04_srs.md](docs/04_srs.md)** — Software Requirements Specification
+5. **[05_architecture.md](docs/05_architecture.md)** — System Architecture Document
+6. **[06_database.md](docs/06_database.md)** — Database Design Document (PostgreSQL Schema)
+7. **[07_desain.md](docs/07_desain.md)** — UI/UX Design System Guide
+8. **[08_routing.md](docs/08_routing.md)** — Route Architecture & Next.js App Router Structure
+9. **[09_testing.md](docs/09_testing.md)** — Testing Strategy & QA Test Cases
+10. **[10_user_manual.md](docs/10_user_manual.md)** — User Manual / Guidebook
+11. **[12_security.md](docs/12_security.md)** — Security & Access Control Guide
+12. **[14_changelog.md](docs/14_changelog.md)** — Release Notes & Version History
 
 ---
 
