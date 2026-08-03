@@ -9,15 +9,27 @@
 
 ---
 
-## Fitur Utama & Optimasi Terbaru (v1.2.0)
+## Peran Pengguna (User Roles)
 
-- **Fast-Path Edge Middleware**: Pemangkasan *blocking network call* Supabase pada rute publik dari 5.7s menjadi **< 1ms**.
-- **Turbopack Dev Mode**: Server pengembang berjalan secara instan dengan Next.js Turbopack (`next dev --turbopack`).
-- **Pemberantasan Memory Leak**: Resolusi *infinite event loop* pada sinkronisasi sesi Zustand & Supabase (penggunaan RAM browser stabil **< 100 MB**).
-- **Akselerasi Grafis (GPU Optimization)**: Eliminasi efek CSS `mask-image` & `blur-3xl` yang membakar CPU peramban.
-- **Paginasi Interaktif**: Paginasi 10 data per halaman dengan pencarian & filter pada tabel *Seluruh Pengguna Sistem* (`UsersTab`) dan *Log Aktivitas Sistem* (`OverviewTab`).
-- **Ekspor CSV Sungguhan (*Downloadable CSV*)**: Utilitas `exportToCsv` untuk mengunduh log audit dan data pengguna secara langsung ke berkas `.csv`.
-- **Kebijakan Pendaftaran Terpusat (*Strict Centralized Provisioning*)**: Seluruh akun (`mahasiswa`, `dosen`, `tu`, `admin`) didaftarkan secara terpusat oleh Admin/TU (tidak ada registrasi mandiri mahasiswa).
+1. **Mahasiswa**: Mengakses modul perkuliahan mingguan 1–16, mengunduh materi (PDF/Video), mengumpulkan tugas, mengikuti CBT Quiz Simulator, berpartisipasi di forum diskusi kelas, serta memantau IPK & KRS.
+2. **Dosen**: Mengunggah materi perkuliahan, membuat penugasan & kuis, menilai submission mahasiswa (*Grading Panel*), memberikan umpan balik, serta mengelola presensi absensi mingguan.
+3. **Staff TU (Tata Usaha)**: Mengelola master kelas, penawaran mata kuliah per semester, mendaftarkan mahasiswa ke kelas, serta mendaftarkan akun massal via *Simulator Bulk CSV Import*.
+4. **Super Admin**: Mengelola seluruh akun pengguna (CRUD & Reset Password), memantau Jejak Audit (*Audit Logs*), mengelola master mata kuliah, kalender akademik universitas, dan melakukan ekspor data CSV.
+
+> **Catatan Pendaftaran Akun:** Seluruh akun pengguna terdaftar secara terpusat oleh Admin atau Staff TU. Tidak ada fitur pendaftaran mandiri (self-registration) bagi mahasiswa.
+
+---
+
+## Fitur Utama Platform
+
+- **Autentikasi & Otorisasi Berbasis Peran**: Akses dasbor yang disesuaikan secara khusus untuk Mahasiswa, Dosen, Staff TU, dan Admin.
+- **Modul Pembelajaran Mingguan (Week 1–16)**: Pengorganisasian materi perkuliahan (PDF, Video, PPT) terstruktur berbasis minggu.
+- **CBT Quiz Simulator & Penugasan**: Simulator ujian online interaktif dengan timer dan pelacakan status pengumpulan tugas.
+- **Grading Panel & Umpan Balik Dosen**: Modul penilaian tugas mahasiswa oleh dosen dengan rekapitulasi nilai yang transparan.
+- **Manajemen Kelas & Registrasi Peserta**: Pengalokasian dosen pengampu dan pendaftaran mahasiswa ke dalam kelas perkuliahan.
+- **Simulator Bulk CSV Import**: Fitur pendaftaran akun massal dan alokasi kelas secara efisien berbasis berkas CSV.
+- **Konsol Super Admin & Audit Trail**: Monitoring statistik sistem, pencatatan log aktivitas (*Audit Logs*), dan ekspor data CSV.
+- **Paginasi & Filter Pencarian**: Navigasi tabel 10 data per halaman dengan pencarian dan filter peran instan.
 
 ---
 
