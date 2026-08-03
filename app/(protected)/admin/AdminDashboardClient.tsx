@@ -13,7 +13,7 @@ import { CoursesTab } from '@/components/admin/CoursesTab';
 import { CalendarTab } from '@/components/admin/CalendarTab';
 import { ReportsTab } from '@/components/admin/ReportsTab';
 import { SettingsTab } from '@/components/admin/SettingsTab';
-import { createUserInAuth } from './actions';
+import { createUserInAuth, updateUserPasswordInAuth } from './actions';
 import { BookOpen } from 'lucide-react';
 
 interface AdminDashboardClientProps {
@@ -371,7 +371,9 @@ export default function AdminDashboardClient({
                 role: data.role,
                 nim_nip: data.nim_nip,
             };
-            if (data.password) updates.password = data.password;
+            if (data.password && data.password.trim().length >= 6) {
+                await updateUserPasswordInAuth(id, data.password.trim());
+            }
             const { error } = await supabase
                 .from('users')
                 .update(updates)

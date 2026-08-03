@@ -94,12 +94,9 @@ export function CoursesTab({
         'add-course',
     );
 
-    // Keep selectedCourseId in sync if courses prop changes and current selection is not in list
-    useEffect(() => {
-        if (courses.length > 0 && !courses.some((c) => c.id === selectedCourseId)) {
-            setSelectedCourseId(courses[0].id);
-        }
-    }, [courses, selectedCourseId]);
+    const activeCourseId = courses.some((c) => c.id === selectedCourseId)
+        ? selectedCourseId
+        : courses[0]?.id || '';
 
     // Debounce course search input
     useEffect(() => {
@@ -113,7 +110,7 @@ export function CoursesTab({
     const lecturers = [...new Set(courses.map((c) => c.lecturer))];
 
     const currentEnrollments = enrollments.filter(
-        (e) => e.courseId === selectedCourseId,
+        (e) => e.courseId === activeCourseId,
     );
 
     const availableStudents = students.filter(

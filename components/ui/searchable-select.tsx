@@ -70,6 +70,7 @@ export function SearchableSelect({
                 containerRef.current &&
                 !containerRef.current.contains(event.target as Node)
             ) {
+                setSearchQuery('');
                 setIsOpen(false);
             }
         };
@@ -82,15 +83,17 @@ export function SearchableSelect({
         };
     }, [isOpen]);
 
-    // Reset search query when dropdown opens/closes
-    useEffect(() => {
-        if (!isOpen) {
+    const handleToggle = () => {
+        if (disabled) return;
+        if (isOpen) {
             setSearchQuery('');
         }
-    }, [isOpen]);
+        setIsOpen(!isOpen);
+    };
 
     const handleSelectOption = (optValue: string) => {
         onChange(optValue);
+        setSearchQuery('');
         setIsOpen(false);
     };
 
@@ -102,7 +105,7 @@ export function SearchableSelect({
             {/* Trigger Button */}
             <button
                 type="button"
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={handleToggle}
                 disabled={disabled}
                 className={cn(
                     'w-full h-10 border text-[13px] text-ink bg-white rounded-sm px-3.5 flex items-center justify-between transition-all outline-none cursor-pointer',

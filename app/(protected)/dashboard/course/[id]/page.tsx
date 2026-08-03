@@ -18,6 +18,7 @@ export default async function CourseDetailPage(props: {
     let dbAssignments = undefined;
     let dbSubmissions = undefined;
     let dbDiscussions = undefined;
+    let dbQuizzes = undefined;
 
     if (authUser) {
         try {
@@ -199,6 +200,76 @@ export default async function CourseDetailPage(props: {
             } else {
                 dbDiscussions = [];
             }
+
+            // Fetch quizzes for this class
+            const { data: quizzes } = await supabase
+                .from('quizzes')
+                .select(`
+                    id,
+                    title,
+                    type,
+                    duration_min,
+                    open_at,
+                    close_at,
+                    is_published,
+                    questions (
+                        id,
+                        content,
+                        type,
+                        order_no,
+                        question_options (
+                            id,
+                            option_text,
+                            is_correct
+                        )
+                    ),
+                    quiz_attempts (
+                        id,
+                        student_id,
+                        started_at,
+                        submitted_at,
+                        score,
+                        answers
+                    )
+                `)
+                .eq('class_id', courseId)
+                .eq('is_published', true);
+
+            if (quizzes) {
+                dbQuizzes = quizzes.map((q: any) => {
+                    const studentAttempts = (q.quiz_attempts || [])
+                        .filter((att: any) => att.student_id === authUser.id)
+                        .map((att: any) => ({
+                            id: att.id,
+                            startedAt: att.started_at,
+                            submittedAt: att.submitted_at,
+                            score: att.score,
+                            answers: att.answers
+                        }));
+
+                    return {
+                        id: q.id,
+                        title: q.title,
+                        type: q.type,
+                        durationMin: q.duration_min,
+                        openAt: q.open_at,
+                        closeAt: q.close_at,
+                        isPublished: q.is_published,
+                        questions: (q.questions || []).map((qst: any) => ({
+                            id: qst.id,
+                            content: qst.content,
+                            type: qst.type,
+                            orderNo: qst.order_no,
+                            options: (qst.question_options || []).map((opt: any) => ({
+                                id: opt.id,
+                                optionText: opt.option_text,
+                                isCorrect: opt.is_correct
+                            }))
+                        })),
+                        attempts: studentAttempts
+                    };
+                });
+            }
         } catch (err) {
             console.error(
                 'Gagal mengambil data detail course dari Supabase:',
@@ -222,6 +293,7 @@ export default async function CourseDetailPage(props: {
                 dbAssignments={dbAssignments}
                 dbSubmissions={dbSubmissions}
                 dbDiscussions={dbDiscussions}
+                dbQuizzes={dbQuizzes}
             />
         </Suspense>
     );

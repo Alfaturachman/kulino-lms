@@ -62,7 +62,7 @@ export function LandingTestimonials() {
                                     ))}
                                 </div>
                                 <p className="text-[14px] text-ink2 italic leading-relaxed mb-6">
-                                    "{t.quote}"
+                                    &quot;{t.quote}&quot;
                                 </p>
                             </div>
                             <div className="flex items-center gap-3 pt-4 border-t border-border/50">

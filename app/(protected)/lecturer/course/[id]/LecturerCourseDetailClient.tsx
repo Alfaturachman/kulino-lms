@@ -27,6 +27,7 @@ import {
     Users,
     Check,
     Edit,
+    ExternalLink,
 } from 'lucide-react';
 
 interface LecturerCourseDetailClientProps {
@@ -40,6 +41,27 @@ export default function LecturerCourseDetailClient({
     const isSupabaseConfigured =
         !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
         process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http');
+
+    // Get download URL from Supabase Storage or fallback
+    const getFileDownloadUrl = (path: string) => {
+        if (!path) return '#';
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        if (isSupabaseConfigured) {
+            const { data } = supabase.storage.from('submissions').getPublicUrl(path);
+            return data?.publicUrl || '#';
+        }
+        return '#';
+    };
+
+    const isVirtualMeetingUrl = (url: string) => {
+        if (!url) return false;
+        const u = url.toLowerCase();
+        return u.includes('meet.google.com') || 
+               u.includes('zoom.us') || 
+               u.includes('meet.jit.si') || 
+               u.includes('webex.com') || 
+               u.includes('teams.microsoft.com');
+    };
 
     // States
     const [course, setCourse] = useState<any>(null);
@@ -473,6 +495,23 @@ export default function LecturerCourseDetailClient({
 
                 if (error) throw error;
 
+                if (matType === 'link' && isVirtualMeetingUrl(matUrl)) {
+                    try {
+                        const eventDate = new Date();
+                        eventDate.setHours(eventDate.getHours() + 24); // Default to tomorrow
+                        await supabase
+                            .from('calendar_events')
+                            .insert({
+                                class_id: courseId,
+                                title: `Live Class: ${matTitle}`,
+                                date: eventDate.toISOString(),
+                                type: 'academic',
+                            });
+                    } catch (calErr) {
+                        console.warn('Gagal menjadwalkan event kalender otomatis:', calErr);
+                    }
+                }
+
                 const newModule: Module = {
                     id: data.id,
                     courseId,
@@ -763,105 +802,167 @@ export default function LecturerCourseDetailClient({
                                         </button>
 
                                         {isExpanded && (
-                                            <div className="p-4 border-t border-border/50 divide-y divide-border/40 bg-white">
-                                                {weekModules.length > 0 ? (
-                                                    weekModules.map((mod) => (
-                                                        <div
-                                                            key={mod.id}
-                                                            className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
-                                                        >
-                                                            <div className="flex items-start gap-3">
-                                                                <div
-                                                                    className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${
-                                                                        mod.type ===
-                                                                        'video'
-                                                                            ? 'bg-red-50 text-red-600'
-                                                                            : mod.type ===
-                                                                                'pdf'
-                                                                              ? 'bg-amber-50 text-amber-600'
-                                                                              : mod.type ===
-                                                                                  'ppt'
-                                                                                ? 'bg-orange-50 text-orange-600'
-                                                                                : 'bg-iris-50 text-iris-600'
-                                                                    }`}
-                                                                >
-                                                                    {mod.type ===
-                                                                    'video' ? (
-                                                                        <Video
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                    ) : mod.type ===
-                                                                      'pdf' ? (
-                                                                        <FileText
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                    ) : mod.type ===
-                                                                      'ppt' ? (
-                                                                        <FileText
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                    ) : (
-                                                                        <Link2
-                                                                            size={
-                                                                                16
-                                                                            }
-                                                                        />
-                                                                    )}
+                                            <div className="p-4 border-t border-border/50 bg-white space-y-4">
+                                                {/* 1. KELAS VIRTUAL (VIRTUAL MEETINGS) */}
+                                                {weekModules.filter(m => m.type === 'link' && isVirtualMeetingUrl(m.contentUrl)).length > 0 && (
+                                                    <div className="space-y-2 pb-2 border-b border-border/40">
+                                                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-iris-600 flex items-center gap-1.5">
+                                                            <span className="relative flex h-2 w-2">
+                                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                            </span>
+                                                            Tatap Muka Daring (Live Class)
+                                                        </h4>
+                                                        {weekModules.filter(m => m.type === 'link' && isVirtualMeetingUrl(m.contentUrl)).map((mod) => (
+                                                            <div key={mod.id} className="flex items-center justify-between bg-surface2/50 border border-iris-100 p-3 rounded-xl gap-3">
+                                                                <div className="flex items-start gap-2.5">
+                                                                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                                                        <Video size={18} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h5 className="text-[12px] font-bold text-ink leading-tight">{mod.title}</h5>
+                                                                        <p className="text-[10px] text-muted leading-tight mt-0.5">{mod.description || 'Kelas Tatap Muka Online'}</p>
+                                                                        <span className="text-[9px] font-mono text-muted bg-surface2 px-1.5 py-0.5 rounded border border-border/60 mt-1.5 inline-block">
+                                                                            {mod.contentUrl}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <h4 className="text-[13px] font-bold text-ink leading-snug">
-                                                                        {
-                                                                            mod.title
-                                                                        }
-                                                                    </h4>
-                                                                    <p className="text-[11px] text-muted mt-0.5">
-                                                                        {
-                                                                            mod.description
-                                                                        }
-                                                                    </p>
-                                                                    <span className="text-[9px] font-mono text-muted bg-surface2 px-1.5 py-0.5 rounded border border-border/60 mt-1.5 inline-block">
-                                                                        {
-                                                                            mod.contentUrl
-                                                                        }
-                                                                    </span>
+                                                                <div className="flex items-center gap-2">
+                                                                    <a href={mod.contentUrl} target="_blank" rel="noopener noreferrer">
+                                                                        <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] gap-1 shrink-0 shadow-sm cursor-pointer">
+                                                                            Gabung <ExternalLink size={12} />
+                                                                        </Button>
+                                                                    </a>
+                                                                    <button
+                                                                        onClick={async () => {
+                                                                            if (isSupabaseConfigured) {
+                                                                                try {
+                                                                                    const { error } = await supabase
+                                                                                        .from('modules')
+                                                                                        .delete()
+                                                                                        .eq('id', mod.id);
+                                                                                    if (error) throw error;
+                                                                                } catch (err: any) {
+                                                                                    alert('Gagal menghapus materi: ' + err.message);
+                                                                                    return;
+                                                                                }
+                                                                            }
+                                                                            setModules((prev) => prev.filter((m) => m.id !== mod.id));
+                                                                        }}
+                                                                        className="text-muted hover:text-danger p-1 rounded transition-colors cursor-pointer"
+                                                                    >
+                                                                        <Trash size={14} />
+                                                                    </button>
                                                                 </div>
                                                             </div>
-
-                                                            <button
-                                                                onClick={() =>
-                                                                    setModules(
-                                                                        (
-                                                                            prev,
-                                                                        ) =>
-                                                                            prev.filter(
-                                                                                (
-                                                                                    m,
-                                                                                ) =>
-                                                                                    m.id !==
-                                                                                    mod.id,
-                                                                            ),
-                                                                    )
-                                                                }
-                                                                className="text-muted hover:text-danger p-1 rounded transition-colors cursor-pointer"
-                                                            >
-                                                                <Trash
-                                                                    size={14}
-                                                                />
-                                                            </button>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <p className="text-center py-4 text-[12px] text-muted">
-                                                        Belum ada materi
-                                                        pembelajaran diunggah.
-                                                    </p>
+                                                        ))}
+                                                    </div>
                                                 )}
+
+                                                {/* 2. BAHAN AJAR (ACADEMIC MATERIALS) */}
+                                                <div>
+                                                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted mb-2">Bahan & Materi Pembelajaran</h4>
+                                                    {weekModules.filter(m => !(m.type === 'link' && isVirtualMeetingUrl(m.contentUrl))).length > 0 ? (
+                                                        <div className="divide-y divide-border/40">
+                                                            {weekModules.filter(m => !(m.type === 'link' && isVirtualMeetingUrl(m.contentUrl))).map((mod) => (
+                                                                <div
+                                                                    key={mod.id}
+                                                                    className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
+                                                                >
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div
+                                                                            className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${
+                                                                                mod.type ===
+                                                                                'video'
+                                                                                    ? 'bg-red-50 text-red-600'
+                                                                                    : mod.type ===
+                                                                                        'pdf'
+                                                                                      ? 'bg-amber-50 text-amber-600'
+                                                                                      : mod.type ===
+                                                                                          'ppt'
+                                                                                        ? 'bg-orange-50 text-orange-600'
+                                                                                        : 'bg-iris-50 text-iris-600'
+                                                                            }`}
+                                                                        >
+                                                                            {mod.type ===
+                                                                            'video' ? (
+                                                                                <Video
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            ) : mod.type ===
+                                                                              'pdf' ? (
+                                                                                <FileText
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            ) : mod.type ===
+                                                                              'ppt' ? (
+                                                                                <FileText
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            ) : (
+                                                                                <Link2
+                                                                                    size={
+                                                                                        16
+                                                                                    }
+                                                                                />
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <h4 className="text-[13px] font-bold text-ink leading-snug">
+                                                                                {
+                                                                                    mod.title
+                                                                                }
+                                                                            </h4>
+                                                                            <p className="text-[11px] text-muted mt-0.5">
+                                                                                {
+                                                                                    mod.description
+                                                                                }
+                                                                            </p>
+                                                                            <span className="text-[9px] font-mono text-muted bg-surface2 px-1.5 py-0.5 rounded border border-border/60 mt-1.5 inline-block">
+                                                                                {
+                                                                                    mod.contentUrl
+                                                                                }
+                                                                            </span>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button
+                                                                            onClick={async () => {
+                                                                                if (isSupabaseConfigured) {
+                                                                                    try {
+                                                                                        const { error } = await supabase
+                                                                                            .from('modules')
+                                                                                            .delete()
+                                                                                            .eq('id', mod.id);
+                                                                                        if (error) throw error;
+                                                                                    } catch (err: any) {
+                                                                                        alert('Gagal menghapus materi: ' + err.message);
+                                                                                        return;
+                                                                                    }
+                                                                                }
+                                                                                setModules((prev) => prev.filter((m) => m.id !== mod.id));
+                                                                            }}
+                                                                            className="text-muted hover:text-danger p-1 rounded transition-colors cursor-pointer"
+                                                                        >
+                                                                            <Trash size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-center py-4 text-[12px] text-muted">
+                                                            Belum ada materi pembelajaran diunggah.
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
                                         )}
                                     </Card>
@@ -1244,9 +1345,14 @@ export default function LecturerCourseDetailClient({
                                                         </span>
                                                     </td>
                                                     <td className="p-3">
-                                                        <span className="font-mono text-iris-600 underline cursor-pointer">
-                                                            {sub.fileUrl}
-                                                        </span>
+                                                        <a
+                                                            href={getFileDownloadUrl(sub.fileUrl)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="font-mono text-iris-600 underline hover:text-iris-800 transition-colors"
+                                                        >
+                                                            {sub.fileUrl.split('/').pop()}
+                                                        </a>
                                                     </td>
                                                     <td className="p-3 text-center text-muted">
                                                         {date.toLocaleDateString(

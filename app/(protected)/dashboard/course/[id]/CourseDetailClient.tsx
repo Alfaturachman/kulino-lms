@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -42,11 +42,73 @@ interface CourseDetailClientProps {
     dbAssignments?: any[];
     dbSubmissions?: any[];
     dbDiscussions?: any[];
+    dbQuizzes?: any[];
 }
 
 const getNextSubId = () => `SUB-${Date.now()}`;
 const getNextDiscussionId = () => `DIS-${Date.now()}`;
 const getNextReplyId = () => `RPY-${Date.now()}`;
+
+const isVirtualMeetingUrl = (url: string) => {
+    if (!url) return false;
+    const u = url.toLowerCase();
+    return u.includes('meet.google.com') || 
+           u.includes('zoom.us') || 
+           u.includes('meet.jit.si') || 
+           u.includes('webex.com') || 
+           u.includes('teams.microsoft.com');
+};
+
+const mockQuizzes = [
+  {
+    id: 'quiz-1',
+    title: 'Kuis Evaluasi 1: Konsep Dasar HTML & CSS',
+    type: 'quiz',
+    durationMin: 15,
+    openAt: new Date(Date.now() - 3600000).toISOString(),
+    closeAt: new Date(Date.now() + 86400000).toISOString(),
+    isPublished: true,
+    questions: [
+      {
+        id: 'q1',
+        content: 'Manakah tag HTML yang benar untuk membuat heading tingkat pertama?',
+        type: 'mcq',
+        orderNo: 1,
+        options: [
+          { id: 'q1-o1', optionText: '<heading>', isCorrect: false },
+          { id: 'q1-o2', optionText: '<h6>', isCorrect: false },
+          { id: 'q1-o3', optionText: '<h1>', isCorrect: true },
+          { id: 'q1-o4', optionText: '<head>', isCorrect: false }
+        ]
+      },
+      {
+        id: 'q2',
+        content: 'Properti CSS apa yang digunakan untuk mengubah warna teks dari sebuah elemen?',
+        type: 'mcq',
+        orderNo: 2,
+        options: [
+          { id: 'q2-o1', optionText: 'text-color', isCorrect: false },
+          { id: 'q2-o2', optionText: 'color', isCorrect: true },
+          { id: 'q2-o3', optionText: 'font-color', isCorrect: false },
+          { id: 'q2-o4', optionText: 'fgcolor', isCorrect: false }
+        ]
+      },
+      {
+        id: 'q3',
+        content: 'Bagaimana cara menambahkan komentar dalam file CSS?',
+        type: 'mcq',
+        orderNo: 3,
+        options: [
+          { id: 'q3-o1', optionText: '// ini komentar', isCorrect: false },
+          { id: 'q3-o2', optionText: '/* ini komentar */', isCorrect: true },
+          { id: 'q3-o3', optionText: '\' ini komentar', isCorrect: false },
+          { id: 'q3-o4', optionText: '<!-- ini komentar -->', isCorrect: false }
+        ]
+      }
+    ],
+    attempts: []
+  }
+];
 
 export default function CourseDetailClient({
     courseId,
@@ -55,6 +117,7 @@ export default function CourseDetailClient({
     dbAssignments,
     dbSubmissions,
     dbDiscussions,
+    dbQuizzes,
 }: CourseDetailClientProps) {
     const router = useRouter();
     const course = dbCourse || null;
@@ -66,8 +129,17 @@ export default function CourseDetailClient({
 
     // States
     const [activeSubTab, setActiveSubTab] = useState<
-        'materi' | 'tugas' | 'diskusi' | 'nilai'
+        'materi' | 'tugas' | 'kuis' | 'diskusi' | 'nilai'
     >('materi');
+
+    const [quizzesList, setQuizzesList] = useState<any[]>(
+        dbQuizzes || mockQuizzes
+    );
+    const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
+    const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
+    const [quizTimeRemaining, setQuizTimeRemaining] = useState<number>(0);
+    const [quizWarnings, setQuizWarnings] = useState<number>(0);
+    const [isSubmittingQuiz, setIsSubmittingQuiz] = useState<boolean>(false);
     const [expandedWeeks, setExpandedWeeks] = useState<Record<number, boolean>>(
         {
             1: true,
@@ -94,6 +166,174 @@ export default function CourseDetailClient({
     const [newDiscussionContent, setNewDiscussionContent] = useState('');
     const [showAddDiscussion, setShowAddDiscussion] = useState(false);
     const [replyInputs, setReplyInputs] = useState<Record<string, string>>({});
+
+    // CBT Timer countdown logic
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            quizzesList.forEach(q => {
+                const key = `quiz_start_${q.id}_${user?.id || 'guest'}`;
+                const start = localStorage.getItem(key);
+                if (start) {
+                    const elapsed = Math.floor((Date.now() - parseInt(start)) / 1000);
+                    if (elapsed < q.durationMin * 60) {
+                        setActiveQuizId(q.id);
+                        setQuizTimeRemaining(q.durationMin * 60 - elapsed);
+                    } else {
+                        localStorage.removeItem(key);
+                    }
+                }
+            });
+        }
+    }, [quizzesList, user]);
+
+    // We'll write the active quiz timer in an effect
+    useEffect(() => {
+        if (!activeQuizId) return;
+        const interval = setInterval(() => {
+            const key = `quiz_start_${activeQuizId}_${user?.id || 'guest'}`;
+            const start = localStorage.getItem(key);
+            if (start) {
+                const elapsed = Math.floor((Date.now() - parseInt(start)) / 1000);
+                const quizObj = quizzesList.find(q => q.id === activeQuizId);
+                if (quizObj) {
+                    const remaining = quizObj.durationMin * 60 - elapsed;
+                    if (remaining <= 0) {
+                        setQuizTimeRemaining(0);
+                        clearInterval(interval);
+                        submitQuizResults(activeQuizId, true);
+                    } else {
+                        setQuizTimeRemaining(remaining);
+                    }
+                }
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [activeQuizId, quizzesList, user]);
+
+    // Fraud check
+    useEffect(() => {
+        if (!activeQuizId) return;
+        const handleVisibilityChange = () => {
+            if (document.hidden) {
+                setQuizWarnings((prev) => {
+                    const newWarnings = prev + 1;
+                    alert(`PERINGATAN KECURANGAN [Peringatan ${newWarnings}]: Dilarang berpindah tab browser selama ujian! Tindakan kecurangan akan dicatat dan dilaporkan.`);
+                    return newWarnings;
+                });
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, [activeQuizId]);
+
+    const handleStartQuiz = (quizId: string) => {
+        const quizObj = quizzesList.find(q => q.id === quizId);
+        if (!quizObj) return;
+
+        const confirmStart = confirm(`Apakah Anda yakin ingin memulai kuis "${quizObj.title}"?\nWaktu pengerjaan: ${quizObj.durationMin} menit. Waktu akan terus berjalan meskipun halaman ditutup atau di-refresh.`);
+        if (!confirmStart) return;
+
+        setActiveQuizId(quizId);
+        setQuizAnswers({});
+        setQuizWarnings(0);
+        setQuizTimeRemaining(quizObj.durationMin * 60);
+
+        const key = `quiz_start_${quizId}_${user?.id || 'guest'}`;
+        localStorage.setItem(key, Date.now().toString());
+    };
+
+    const handleManualSubmitQuiz = (quizId: string) => {
+        const confirmSubmit = confirm("Apakah Anda yakin ingin mengumpulkan kuis sekarang?");
+        if (!confirmSubmit) return;
+        submitQuizResults(quizId, false);
+    };
+
+    const submitQuizResults = async (quizId: string, isAuto: boolean) => {
+        setIsSubmittingQuiz(true);
+        const quizObj = quizzesList.find(q => q.id === quizId);
+        if (!quizObj) return;
+
+        let correctCount = 0;
+        quizObj.questions.forEach((q: any) => {
+            const selectedOptId = quizAnswers[q.id];
+            const correctOpt = q.options?.find((opt: any) => opt.isCorrect);
+            if (selectedOptId && correctOpt && selectedOptId === correctOpt.id) {
+                correctCount++;
+            }
+        });
+
+        const score = parseFloat(((correctCount / quizObj.questions.length) * 100).toFixed(2));
+        const startedKey = `quiz_start_${quizId}_${user?.id || 'guest'}`;
+        const startedAtStr = localStorage.getItem(startedKey) || Date.now().toString();
+        const startedAt = new Date(parseInt(startedAtStr)).toISOString();
+        const submittedAt = new Date().toISOString();
+
+        if (isSupabaseConfigured && user) {
+            try {
+                const { data, error } = await supabase
+                    .from('quiz_attempts')
+                    .insert({
+                        quiz_id: quizId,
+                        student_id: user.id,
+                        started_at: startedAt,
+                        submitted_at: submittedAt,
+                        score: score,
+                        answers: quizAnswers
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                setQuizzesList(prev => prev.map(q => {
+                    if (q.id === quizId) {
+                        return {
+                            ...q,
+                            attempts: [
+                                ...(q.attempts || []),
+                                {
+                                    id: data.id,
+                                    startedAt: data.started_at,
+                                    submittedAt: data.submitted_at,
+                                    score: data.score,
+                                    answers: data.answers
+                                }
+                            ]
+                        };
+                    }
+                    return q;
+                }));
+            } catch (err: any) {
+                alert('Gagal mengunggah hasil kuis: ' + err.message);
+            }
+        } else {
+            const mockAttempt = {
+                id: `att-${Date.now()}`,
+                startedAt,
+                submittedAt,
+                score,
+                answers: quizAnswers
+            };
+            setQuizzesList(prev => prev.map(q => {
+                if (q.id === quizId) {
+                    return {
+                        ...q,
+                        attempts: [
+                            ...(q.attempts || []),
+                            mockAttempt
+                        ]
+                    };
+                }
+                return q;
+            }));
+        }
+
+        localStorage.removeItem(startedKey);
+        setActiveQuizId(null);
+        setIsSubmittingQuiz(false);
+
+        alert(`Ujian selesai! Skor Anda: ${score} / 100. ${quizWarnings > 0 ? `\nTercatat ${quizWarnings} kali indikasi keluar/berpindah tab.` : ''}`);
+    };
 
     if (!course) {
         return (
@@ -128,14 +368,25 @@ export default function CourseDetailClient({
         }
     };
 
-    // Simulate file upload progress
+    // Get download URL from Supabase Storage or fallback
+    const getFileDownloadUrl = (path: string) => {
+        if (!path) return '#';
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        if (isSupabaseConfigured) {
+            const { data } = supabase.storage.from('submissions').getPublicUrl(path);
+            return data?.publicUrl || '#';
+        }
+        return '#';
+    };
+
+    // Handle file upload to Supabase Storage and submit assignment
     const handleSubmitAssignment = async (assignmentId: string) => {
         if (!uploadFile) return;
         setUploading(true);
         setUploadProgress(10);
 
         for (let p = 20; p <= 100; p += 20) {
-            await new Promise((r) => setTimeout(r, 200));
+            await new Promise((r) => setTimeout(r, 100));
             setUploadProgress(p);
         }
 
@@ -147,12 +398,34 @@ export default function CourseDetailClient({
                 );
                 const version = existing.length + 1;
 
+                // Upload to Supabase Storage bucket 'submissions'
+                let fileUrlPath = uploadFile.name;
+                try {
+                    const fileExt = uploadFile.name.split('.').pop();
+                    const filePath = `${user.id}/${assignmentId}_v${version}_${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('submissions')
+                        .upload(filePath, uploadFile, {
+                            cacheControl: '3600',
+                            upsert: true
+                        });
+                        
+                    if (uploadError) {
+                        console.warn("Storage bucket 'submissions' mungkin belum diinisialisasi. Error:", uploadError.message);
+                    } else if (uploadData) {
+                        fileUrlPath = uploadData.path; // Simpan path storage
+                    }
+                } catch (storageErr) {
+                    console.warn("Gagal unggah ke Supabase Storage, fallback ke nama berkas:", storageErr);
+                }
+
                 const { data, error } = await supabase
                     .from("submissions")
                     .insert({
                         assignment_id: assignmentId,
                         student_id: user.id,
-                        file_url: uploadFile.name,
+                        file_url: fileUrlPath,
                         submitted_at: new Date().toISOString(),
                         is_late: false,
                         version: version,
@@ -167,7 +440,7 @@ export default function CourseDetailClient({
                     assignmentId,
                     studentId: user.id,
                     studentName: user.name || "Mahasiswa",
-                    fileUrl: uploadFile.name,
+                    fileUrl: fileUrlPath,
                     submittedAt: data.submitted_at,
                     isLate: data.is_late,
                     version: data.version,
@@ -380,7 +653,8 @@ export default function CourseDetailClient({
                         {(
                             [
                                 { id: 'materi', label: 'Materi Kuliah' },
-                                { id: 'tugas', label: 'Tugas & Ujian' },
+                                { id: 'tugas', label: 'Tugas' },
+                                { id: 'kuis', label: 'Kuis & CBT' },
                                 { id: 'diskusi', label: 'Forum Diskusi' },
                                 { id: 'nilai', label: 'Penilaian' },
                             ] as const
@@ -456,124 +730,158 @@ export default function CourseDetailClient({
 
                                             {/* Week Accordion Content */}
                                             {isExpanded && (
-                                                <div className="p-4 border-t border-border/50 divide-y divide-border/40">
-                                                    {weekModules.length > 0 ? (
-                                                        weekModules.map(
-                                                            (mod) => (
-                                                                <div
-                                                                    key={mod.id}
-                                                                    className="py-3.5 first:pt-0 last:pb-0 space-y-2"
-                                                                >
-                                                                    <div className="flex items-start justify-between gap-3">
-                                                                        <div className="flex items-start gap-3">
-                                                                            <div
-                                                                                className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${
-                                                                                    mod.type ===
-                                                                                    'video'
-                                                                                        ? 'bg-red-50 text-red-600'
-                                                                                        : mod.type ===
-                                                                                            'pdf'
-                                                                                          ? 'bg-amber-50 text-amber-600'
-                                                                                          : mod.type ===
-                                                                                              'ppt'
-                                                                                            ? 'bg-orange-50 text-orange-600'
-                                                                                            : 'bg-iris-50 text-iris-600'
-                                                                                }`}
+                                                <div className="p-4 border-t border-border/50 bg-white space-y-4">
+                                                    {/* 1. KELAS VIRTUAL (VIRTUAL MEETINGS) */}
+                                                    {weekModules.filter(m => m.type === 'link' && isVirtualMeetingUrl(m.contentUrl)).length > 0 && (
+                                                        <div className="space-y-2 pb-2 border-b border-border/40">
+                                                            <h4 className="text-[11px] font-bold uppercase tracking-wider text-iris-600 flex items-center gap-1.5">
+                                                                <span className="relative flex h-2 w-2">
+                                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                                </span>
+                                                                Tatap Muka Daring (Live Class)
+                                                            </h4>
+                                                            {weekModules.filter(m => m.type === 'link' && isVirtualMeetingUrl(m.contentUrl)).map((mod) => (
+                                                                <div key={mod.id} className="flex items-center justify-between bg-surface2/50 border border-iris-100 p-3 rounded-xl gap-3">
+                                                                    <div className="flex items-start gap-2.5">
+                                                                        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
+                                                                            <Video size={18} />
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5 className="text-[12px] font-bold text-ink leading-tight">{mod.title}</h5>
+                                                                            <p className="text-[10px] text-muted leading-tight mt-0.5">{mod.description || 'Kelas Tatap Muka Online'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                    <a href={mod.contentUrl} target="_blank" rel="noopener noreferrer">
+                                                                        <Button size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] gap-1 shrink-0 shadow-sm cursor-pointer">
+                                                                            Gabung Pertemuan <ExternalLink size={12} />
+                                                                        </Button>
+                                                                    </a>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {/* 2. BAHAN AJAR (ACADEMIC MATERIALS) */}
+                                                    <div>
+                                                        <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted mb-2">Bahan & Materi Pembelajaran</h4>
+                                                        {weekModules.filter(m => !(m.type === 'link' && isVirtualMeetingUrl(m.contentUrl))).length > 0 ? (
+                                                            <div className="divide-y divide-border/40">
+                                                                {weekModules.filter(m => !(m.type === 'link' && isVirtualMeetingUrl(m.contentUrl))).map((mod) => (
+                                                                    <div
+                                                                        key={mod.id}
+                                                                        className="py-3.5 first:pt-0 last:pb-0 space-y-2"
+                                                                    >
+                                                                        <div className="flex items-start justify-between gap-3">
+                                                                            <div className="flex items-start gap-3">
+                                                                                <div
+                                                                                    className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${
+                                                                                        mod.type ===
+                                                                                        'video'
+                                                                                            ? 'bg-red-50 text-red-600'
+                                                                                            : mod.type ===
+                                                                                                'pdf'
+                                                                                              ? 'bg-amber-50 text-amber-600'
+                                                                                              : mod.type ===
+                                                                                                  'ppt'
+                                                                                                ? 'bg-orange-50 text-orange-600'
+                                                                                                : 'bg-iris-50 text-iris-600'
+                                                                                    }`}
+                                                                                >
+                                                                                    {mod.type ===
+                                                                                    'video' ? (
+                                                                                        <Video
+                                                                                            size={
+                                                                                                16
+                                                                                            }
+                                                                                        />
+                                                                                    ) : mod.type ===
+                                                                                      'pdf' ? (
+                                                                                        <FileText
+                                                                                            size={
+                                                                                                16
+                                                                                            }
+                                                                                        />
+                                                                                    ) : mod.type ===
+                                                                                      'ppt' ? (
+                                                                                        <FileText
+                                                                                            size={
+                                                                                                16
+                                                                                            }
+                                                                                        />
+                                                                                    ) : (
+                                                                                        <Link2
+                                                                                            size={
+                                                                                                16
+                                                                                            }
+                                                                                        />
+                                                                                    )}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <h4 className="text-[13px] font-bold text-ink leading-snug">
+                                                                                        {
+                                                                                            mod.title
+                                                                                        }
+                                                                                    </h4>
+                                                                                    <p className="text-[11px] text-muted leading-relaxed mt-0.5">
+                                                                                        {
+                                                                                            mod.description
+                                                                                        }
+                                                                                    </p>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            <a
+                                                                                href={
+                                                                                    mod.contentUrl
+                                                                                }
+                                                                                target="_blank"
+                                                                                rel="noopener noreferrer"
                                                                             >
-                                                                                {mod.type ===
-                                                                                'video' ? (
-                                                                                    <Video
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    className="h-8 text-muted gap-1 text-[11px] hover:text-ink"
+                                                                                >
+                                                                                    Buka{' '}
+                                                                                    <ExternalLink
                                                                                         size={
-                                                                                            16
+                                                                                            12
                                                                                         }
                                                                                     />
-                                                                                ) : mod.type ===
-                                                                                  'pdf' ? (
-                                                                                    <FileText
-                                                                                        size={
-                                                                                            16
-                                                                                        }
-                                                                                    />
-                                                                                ) : mod.type ===
-                                                                                  'ppt' ? (
-                                                                                    <FileText
-                                                                                        size={
-                                                                                            16
-                                                                                        }
-                                                                                    />
-                                                                                ) : (
-                                                                                    <Link2
-                                                                                        size={
-                                                                                            16
-                                                                                        }
-                                                                                    />
-                                                                                )}
-                                                                            </div>
-                                                                            <div>
-                                                                                <h4 className="text-[13px] font-bold text-ink leading-snug">
-                                                                                    {
-                                                                                        mod.title
-                                                                                    }
-                                                                                </h4>
-                                                                                <p className="text-[11px] text-muted leading-relaxed mt-0.5">
-                                                                                    {
-                                                                                        mod.description
-                                                                                    }
-                                                                                </p>
-                                                                            </div>
+                                                                                </Button>
+                                                                            </a>
                                                                         </div>
 
-                                                                        <a
-                                                                            href={
-                                                                                mod.contentUrl
-                                                                            }
-                                                                            target="_blank"
-                                                                            rel="noopener noreferrer"
-                                                                        >
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                className="h-8 text-muted gap-1 text-[11px] hover:text-ink"
-                                                                            >
-                                                                                Buka{' '}
-                                                                                <ExternalLink
-                                                                                    size={
-                                                                                        12
-                                                                                    }
-                                                                                />
-                                                                            </Button>
-                                                                        </a>
+                                                                        {/* Video Player Embed Preview for YouTube videos */}
+                                                                        {mod.type ===
+                                                                            'video' &&
+                                                                            mod.contentUrl.includes(
+                                                                                'youtube',
+                                                                            ) && (
+                                                                                <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-border mt-2 shadow-xs">
+                                                                                    <iframe
+                                                                                        src={
+                                                                                            mod.contentUrl
+                                                                                        }
+                                                                                        title={
+                                                                                            mod.title
+                                                                                        }
+                                                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                                        allowFullScreen
+                                                                                        className="absolute inset-0 size-full border-0"
+                                                                                    ></iframe>
+                                                                                </div>
+                                                                            )}
                                                                     </div>
-
-                                                                    {/* Video Player Embed Preview for YouTube videos */}
-                                                                    {mod.type ===
-                                                                        'video' &&
-                                                                        mod.contentUrl.includes(
-                                                                            'youtube',
-                                                                        ) && (
-                                                                            <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-border mt-2 shadow-xs">
-                                                                                <iframe
-                                                                                    src={
-                                                                                        mod.contentUrl
-                                                                                    }
-                                                                                    title={
-                                                                                        mod.title
-                                                                                    }
-                                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                                                    allowFullScreen
-                                                                                    className="absolute inset-0 size-full border-0"
-                                                                                ></iframe>
-                                                                            </div>
-                                                                        )}
-                                                                </div>
-                                                            ),
-                                                        )
-                                                    ) : (
-                                                        <p className="text-center py-4 text-muted text-[12px]">
-                                                            Belum ada materi
-                                                            untuk minggu ini.
-                                                        </p>
-                                                    )}
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-center py-4 text-muted text-[12px]">
+                                                                Belum ada materi pembelajaran untuk minggu ini.
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </Card>
@@ -713,11 +1021,14 @@ export default function CourseDetailClient({
                                                                             </p>
                                                                             <p className="text-[11px] opacity-90 mt-0.5">
                                                                                 File:{' '}
-                                                                                <span className="underline font-mono">
-                                                                                    {
-                                                                                        submission.fileUrl
-                                                                                    }
-                                                                                </span>
+                                                                                <a
+                                                                                    href={getFileDownloadUrl(submission.fileUrl)}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="underline font-mono text-emerald-800 hover:text-emerald-950 hover:font-bold transition-all"
+                                                                                >
+                                                                                    {submission.fileUrl.split('/').pop()}
+                                                                                </a>
                                                                             </p>
                                                                             <p className="text-[11px] opacity-90 mt-0.5">
                                                                                 Tanggal:{' '}
@@ -863,6 +1174,188 @@ export default function CourseDetailClient({
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    )}
+
+                    {/* -------------------- TAB CONTENT: KUIS & CBT -------------------- */}
+                    {activeSubTab === 'kuis' && (
+                        <div className="space-y-4">
+                            {activeQuizId ? (
+                                <Card className="p-6 border-iris-200 shadow-md relative overflow-hidden space-y-6 bg-white">
+                                    <div className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-border/80 pb-4 mb-4 flex items-center justify-between z-10">
+                                        <div>
+                                            <span className="text-[10px] uppercase font-bold text-iris-600 tracking-widest bg-iris-50 px-2 py-0.5 rounded">
+                                                Ujian Sedang Berlangsung (CBT Mode)
+                                            </span>
+                                            <h3 className="text-base font-bold text-ink mt-1">
+                                                {quizzesList.find((q) => q.id === activeQuizId)?.title}
+                                            </h3>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            {quizWarnings > 0 && (
+                                                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full text-amber-700 animate-pulse">
+                                                    <AlertCircle size={14} />
+                                                    <span className="text-[11px] font-bold">Kecurangan: {quizWarnings}x</span>
+                                                </div>
+                                            )}
+
+                                            <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-100 text-rose-700 px-3.5 py-1.5 rounded-xl font-mono text-[14px] font-bold">
+                                                <Clock size={16} className="text-rose-600 animate-spin" style={{ animationDuration: '4s' }} />
+                                                <span>
+                                                    {Math.floor(quizTimeRemaining / 60)}:
+                                                    {String(quizTimeRemaining % 60).padStart(2, '0')}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-amber-50/50 border border-amber-100 p-3.5 rounded-xl flex items-start gap-2.5 text-[11px] text-amber-800 leading-relaxed">
+                                        <AlertCircle size={16} className="shrink-0 text-amber-600 mt-0.5" />
+                                        <div>
+                                            <p className="font-bold uppercase tracking-wider">Peraturan Ujian Mandiri & Anti-Curang</p>
+                                            <p className="mt-0.5">Sistem ini mendeteksi aktivitas tab-switching (berpindah tab/browser). Melakukan tindakan tersebut akan dicatat sebagai indikasi pelanggaran oleh sistem dan dosen pengampu.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 pt-2">
+                                        {quizzesList
+                                            .find((q) => q.id === activeQuizId)
+                                            ?.questions?.map((q: any, idx: number) => (
+                                                <div key={q.id} className="p-4 rounded-xl border border-border bg-surface2/30 space-y-3">
+                                                    <div className="flex items-start gap-2">
+                                                        <span className="font-bold text-[13px] text-iris-600 bg-white border border-border px-2 py-0.5 rounded-md h-fit shrink-0">
+                                                            No. {idx + 1}
+                                                        </span>
+                                                        <p className="text-[13px] font-semibold text-ink leading-relaxed pt-0.5">
+                                                            {q.content}
+                                                        </p>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pl-9">
+                                                        {q.options?.map((opt: any) => {
+                                                            const isChecked = quizAnswers[q.id] === opt.id;
+                                                            return (
+                                                                <label
+                                                                    key={opt.id}
+                                                                    className={`flex items-center gap-3 p-3 rounded-lg border text-[12px] font-medium transition-all cursor-pointer ${
+                                                                        isChecked
+                                                                            ? 'bg-iris-50/50 border-iris-300 text-iris-950 font-semibold'
+                                                                            : 'bg-white border-border hover:bg-surface2/50 text-ink2'
+                                                                    }`}
+                                                                >
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`question-${q.id}`}
+                                                                        value={opt.id}
+                                                                        checked={isChecked}
+                                                                        onChange={() => setQuizAnswers((prev) => ({ ...prev, [q.id]: opt.id }))}
+                                                                        className="text-iris-600 focus:ring-iris-500/20"
+                                                                    />
+                                                                    <span>{opt.optionText}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                    </div>
+
+                                    <div className="flex items-center justify-end border-t border-border pt-4 mt-6 gap-3">
+                                        <Button
+                                            onClick={() => {
+                                                if (confirm('Batal mengerjakan kuis? Semua progres saat ini akan hilang.')) {
+                                                    const key = `quiz_start_${activeQuizId}_${user?.id || 'guest'}`;
+                                                    localStorage.removeItem(key);
+                                                    setActiveQuizId(null);
+                                                }
+                                            }}
+                                            variant="ghost"
+                                            className="text-muted text-[12px] cursor-pointer"
+                                        >
+                                            Batalkan
+                                        </Button>
+                                        <Button
+                                            onClick={() => handleManualSubmitQuiz(activeQuizId)}
+                                            disabled={isSubmittingQuiz}
+                                            className="bg-iris-600 hover:bg-iris-700 text-white font-bold text-[12px] px-6 gap-1.5 cursor-pointer"
+                                        >
+                                            Kumpulkan & Selesai
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ) : (
+                                <div className="space-y-4">
+                                    <h2 className="text-[15px] font-bold text-ink">
+                                        Daftar Kuis & Ujian Aktif
+                                    </h2>
+
+                                    <div className="space-y-3">
+                                        {quizzesList.map((quiz) => {
+                                            const isAttempted = quiz.attempts && quiz.attempts.length > 0;
+                                            const latestAttempt = isAttempted ? quiz.attempts[quiz.attempts.length - 1] : null;
+                                            const openTime = new Date(quiz.openAt);
+                                            const closeTime = new Date(quiz.closeAt);
+                                            const now = new Date();
+                                            const isOpen = now >= openTime && now <= closeTime;
+
+                                            return (
+                                                <Card key={quiz.id} className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+                                                    <div className="space-y-1.5">
+                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                            <span className="text-[10px] uppercase font-extrabold tracking-wider text-iris-600 bg-iris-50 px-2 py-0.5 rounded">
+                                                                {quiz.type === 'quiz' ? 'Kuis Mingguan' : quiz.type === 'uts' ? 'UTS' : 'UAS'}
+                                                            </span>
+                                                             {isAttempted ? (
+                                                                <Badge variant="green" className="text-[9px] py-0.5 font-bold">
+                                                                    Selesai Dikerjakan
+                                                                </Badge>
+                                                            ) : isOpen ? (
+                                                                <Badge variant="blue" className="text-[9px] py-0.5 font-bold">
+                                                                    Dapat Dikerjakan
+                                                                </Badge>
+                                                            ) : (
+                                                                <Badge variant="gray" className="text-[9px] py-0.5 font-bold">
+                                                                    Ditutup
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <h3 className="text-[14px] font-bold text-ink leading-snug">{quiz.title}</h3>
+                                                        <div className="flex flex-col gap-1 text-[11px] text-muted">
+                                                            <p className="flex items-center gap-1.5">
+                                                                <Clock size={12} /> Durasi: {quiz.durationMin} Menit &bull; {quiz.questions?.length || 0} Soal Pilihan Ganda
+                                                            </p>
+                                                            <p className="flex items-center gap-1.5">
+                                                                <Calendar size={12} /> Dibuka: {openTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} WIB s/d {closeTime.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} WIB
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+                                                        {isAttempted ? (
+                                                            <div className="text-right">
+                                                                <span className="block text-[10px] text-muted uppercase font-bold tracking-wider">Nilai Anda</span>
+                                                                <span className="text-lg font-black text-emerald-600">{latestAttempt.score} <span className="text-[10px] text-muted font-normal">/ 100</span></span>
+                                                            </div>
+                                                        ) : isOpen ? (
+                                                            <Button
+                                                                onClick={() => handleStartQuiz(quiz.id)}
+                                                                className="bg-iris-600 hover:bg-iris-700 text-white font-bold text-[12px] gap-1 cursor-pointer"
+                                                            >
+                                                                Mulai Ujian
+                                                            </Button>
+                                                        ) : (
+                                                            <Button disabled variant="secondary" className="text-[11px] font-bold">
+                                                                Waktu Habis
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </Card>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 

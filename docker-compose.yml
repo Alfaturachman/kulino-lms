@@ -1,0 +1,20 @@
+name: learning-management-system
+
+services:
+  lms-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lms-web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - NEXT_PUBLIC_SENTRY_DSN=${NEXT_PUBLIC_SENTRY_DSN}
+    env_file:
+      - path: .env.local
+        required: false
