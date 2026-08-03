@@ -26,7 +26,6 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 const roleRedirect: Record<Role, string> = {
-    guest: '/',
     mahasiswa: '/dashboard',
     dosen: '/lecturer',
     tu: '/staff',
