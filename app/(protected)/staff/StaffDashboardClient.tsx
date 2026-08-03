@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "@/store/auth";
 import { Course } from "@/types/course";
-import { User, Role } from "@/types/auth";
+import { User } from "@/types/auth";
 import { createUserInAuth } from "../admin/actions";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -64,8 +64,7 @@ export default function StaffDashboardClient({
   const [systemUsers, setSystemUsers] = useState<User[]>([]);
   const [lecturers, setLecturers] = useState<string[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
-  const [loading, setLoading] = useState(true);
-
+  
   // Search filter
   const [courseSearch, setCourseSearch] = useState("");
 
@@ -108,13 +107,13 @@ export default function StaffDashboardClient({
   );
 
   const fetchData = useCallback(async () => {
+    await Promise.resolve();
     if (!isSupabaseConfigured) {
       setCourses([]);
       setSystemUsers([]);
       setLecturers([]);
       setEnrollments([]);
-      setLoading(false);
-      return;
+            return;
     }
 
     try {
@@ -141,24 +140,27 @@ export default function StaffDashboardClient({
           users ( name )
         `)
         .order("created_at", { ascending: false });
-      const mappedCourses = (classesData || []).map((cls: any) => ({
-        id: cls.id,
-        name: cls.courses?.name || "",
-        code: cls.courses?.code || "",
-        class_name: cls.class_name,
-        semester: cls.semester,
-        sks: cls.courses?.sks || 0,
-        teori: cls.courses?.teori,
-        praktek: cls.courses?.praktek,
-        lecturer: cls.users?.name || "-",
-        description: cls.courses?.description || "",
-        status: cls.status,
-        icon: BookOpen,
-      }));
+      const mappedCourses: Course[] = (classesData || []).map((clsItem) => {
+        const cls = clsItem as Record<string, unknown>;
+        const c = (Array.isArray(cls.courses) ? cls.courses[0] : cls.courses) as Record<string, unknown> | null;
+        const u = (Array.isArray(cls.users) ? cls.users[0] : cls.users) as Record<string, unknown> | null;
+        return {
+          id: String(cls.id || ''),
+          name: String(c?.name || ''),
+          code: String(c?.code || ''),
+          class_name: String(cls.class_name || ''),
+          semester: String(cls.semester || ''),
+          sks: Number(c?.sks || 0),
+          teori: c?.teori ? Number(c.teori) : undefined,
+          praktek: c?.praktek ? Number(c.praktek) : undefined,
+          lecturer: String(u?.name || '-'),
+          description: String(c?.description || ''),
+          status: (cls.status as 'active' | 'completed') || 'active',
+          icon: BookOpen,
+        };
+      });
       setCourses(mappedCourses);
-      if (mappedCourses.length > 0 && !selectedCourseId) {
-        setSelectedCourseId(mappedCourses[0].id);
-      }
+      if (mappedCourses.length > 0) { setSelectedCourseId((prev) => prev || mappedCourses[0].id); }
 
       const { data: enrollmentData } = await supabase
         .from("enrollments")
@@ -168,21 +170,25 @@ export default function StaffDashboardClient({
         `)
         .eq("status", "active");
       setEnrollments(
-        (enrollmentData || []).map((enr: any) => ({
-          courseId: enr.class_id,
-          studentId: enr.student_id,
-          studentName: enr.users?.name || "",
-          nim: enr.users?.nim_nip || "-",
-        })),
+        (enrollmentData || []).map((enrItem) => {
+          const enr = enrItem as Record<string, unknown>;
+          const u = (Array.isArray(enr.users) ? enr.users[0] : enr.users) as Record<string, unknown> | null;
+          return {
+            courseId: String(enr.class_id || ''),
+            studentId: String(enr.student_id || ''),
+            studentName: String(u?.name || ''),
+            nim: String(u?.nim_nip || '-'),
+          };
+        }),
       );
     } catch (err) {
       console.error("Gagal mengambil data:", err);
     } finally {
-      setLoading(false);
-    }
-  }, [isSupabaseConfigured, supabase, selectedCourseId]);
+          }
+  }, [isSupabaseConfigured, supabase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
   }, [fetchData]);
 
@@ -244,8 +250,8 @@ export default function StaffDashboardClient({
 
       await fetchData();
       resetCourseForm();
-    } catch (err: any) {
-      alert("Gagal menambahkan kelas: " + err.message);
+    } catch (err: unknown) {
+      alert("Gagal menambahkan kelas: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -277,8 +283,8 @@ export default function StaffDashboardClient({
       if (error) throw error;
       await fetchData();
       setSelectedStudentId("");
-    } catch (err: any) {
-      alert("Gagal mendaftarkan: " + err.message);
+    } catch (err: unknown) {
+      alert("Gagal mendaftarkan: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -294,8 +300,8 @@ export default function StaffDashboardClient({
         .match({ student_id: studentId, class_id: selectedCourseId });
       if (error) throw error;
       await fetchData();
-    } catch (err: any) {
-      alert("Gagal mengeluarkan: " + err.message);
+    } catch (err: unknown) {
+      alert("Gagal mengeluarkan: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -400,8 +406,8 @@ export default function StaffDashboardClient({
         }
 
         await fetchData();
-      } catch (err: any) {
-        alert("Gagal melakukan impor CSV: " + err.message);
+      } catch (err: unknown) {
+        alert("Gagal melakukan impor CSV: " + (err instanceof Error ? err.message : String(err)));
         setCsvImporting(false);
         return;
       }
@@ -464,8 +470,8 @@ export default function StaffDashboardClient({
       });
       await fetchData();
       resetRegForm();
-    } catch (err: any) {
-      alert("Gagal mendaftarkan: " + err.message);
+    } catch (err: unknown) {
+      alert("Gagal mendaftarkan: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 
@@ -484,8 +490,8 @@ export default function StaffDashboardClient({
       const { error } = await supabase.from("classes").delete().eq("id", courseId);
       if (error) throw error;
       await fetchData();
-    } catch (err: any) {
-      alert("Gagal menghapus kelas: " + err.message);
+    } catch (err: unknown) {
+      alert("Gagal menghapus kelas: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 

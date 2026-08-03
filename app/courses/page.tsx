@@ -28,20 +28,25 @@ export default async function CoursesPage() {
     `)
     .order('created_at', { ascending: false });
 
-  const courses: Course[] = (classesData || []).map((cls: any) => ({
-    id: cls.id,
-    name: cls.courses?.name || '',
-    code: cls.courses?.code || '',
-    class_name: cls.class_name,
-    semester: cls.semester,
-    sks: cls.courses?.sks || 0,
-    teori: cls.courses?.teori,
-    praktek: cls.courses?.praktek,
-    lecturer: cls.users?.name || '-',
-    description: cls.courses?.description || '',
-    status: cls.status,
-    icon: BookOpen,
-  }));
+  const courses: Course[] = (classesData || []).map((clsItem) => {
+    const cls = clsItem as Record<string, unknown>;
+    const c = (Array.isArray(cls.courses) ? cls.courses[0] : cls.courses) as Record<string, unknown> | null;
+    const u = (Array.isArray(cls.users) ? cls.users[0] : cls.users) as Record<string, unknown> | null;
+    return {
+      id: String(cls.id || ''),
+      name: String(c?.name || ''),
+      code: String(c?.code || ''),
+      class_name: String(cls.class_name || ''),
+      semester: String(cls.semester || ''),
+      sks: Number(c?.sks || 0),
+      teori: c?.teori ? Number(c.teori) : undefined,
+      praktek: c?.praktek ? Number(c.praktek) : undefined,
+      lecturer: String(u?.name || '-'),
+      description: String(c?.description || ''),
+      status: (cls.status as 'active' | 'completed') || 'active',
+      icon: BookOpen,
+    };
+  });
 
   const activeCourses = courses.filter((c) => c.status === "active");
   const completedCourses = courses.filter((c) => c.status === "completed");

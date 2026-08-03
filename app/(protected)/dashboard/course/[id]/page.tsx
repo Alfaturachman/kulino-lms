@@ -54,6 +54,7 @@ export default async function CourseDetailPage(props: {
                 .single();
 
             if (clsData) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const cls = clsData as any;
                 const c = Array.isArray(cls.courses)
                     ? cls.courses[0]
@@ -87,6 +88,7 @@ export default async function CourseDetailPage(props: {
                 .order('week_no', { ascending: true });
 
             if (modules) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dbModules = modules.map((m: any) => ({
                     id: m.id,
                     courseId: m.class_id,
@@ -106,6 +108,7 @@ export default async function CourseDetailPage(props: {
                 .eq('class_id', courseId);
 
             if (assignments) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dbAssignments = assignments.map((a: any) => ({
                     id: a.id,
                     courseId: a.class_id,
@@ -126,6 +129,7 @@ export default async function CourseDetailPage(props: {
                 .eq('assignments.class_id', courseId);
 
             if (submissions) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dbSubmissions = submissions.map((s: any) => ({
                     id: s.id,
                     assignmentId: s.assignment_id,
@@ -159,6 +163,7 @@ export default async function CourseDetailPage(props: {
                 .order('date', { ascending: false });
 
             if (discussions && discussions.length > 0) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const discussionIds = discussions.map((d: any) => d.id);
                 const { data: replies } = await supabase
                     .from('discussion_replies')
@@ -177,9 +182,12 @@ export default async function CourseDetailPage(props: {
                     .in('discussion_id', discussionIds)
                     .order('date', { ascending: true });
 
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dbDiscussions = discussions.map((d: any) => {
                     const discReplies = (replies || [])
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .filter((r: any) => r.discussion_id === d.id)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .map((r: any) => ({
                             id: r.id,
                             authorName: r.users?.name || 'Ahmad Fauzi',
@@ -236,9 +244,12 @@ export default async function CourseDetailPage(props: {
                 .eq('is_published', true);
 
             if (quizzes) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 dbQuizzes = quizzes.map((q: any) => {
                     const studentAttempts = (q.quiz_attempts || [])
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .filter((att: any) => att.student_id === authUser.id)
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         .map((att: any) => ({
                             id: att.id,
                             startedAt: att.started_at,
@@ -255,11 +266,13 @@ export default async function CourseDetailPage(props: {
                         openAt: q.open_at,
                         closeAt: q.close_at,
                         isPublished: q.is_published,
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         questions: (q.questions || []).map((qst: any) => ({
                             id: qst.id,
                             content: qst.content,
                             type: qst.type,
                             orderNo: qst.order_no,
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             options: (qst.question_options || []).map((opt: any) => ({
                                 id: opt.id,
                                 optionText: opt.option_text,

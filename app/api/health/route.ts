@@ -13,7 +13,7 @@ export const GET = withErrorHandler(async () => {
         try {
             const supabase = await createClient();
             // Jalankan kueri sederhana untuk memverifikasi koneksi database
-            const { data, error } = await supabase
+            const { error } = await supabase
                 .from('users')
                 .select('id')
                 .limit(1);
@@ -23,7 +23,7 @@ export const GET = withErrorHandler(async () => {
             } else {
                 dbStatus = 'connected';
             }
-        } catch (err) {
+        } catch {
             dbStatus = 'disconnected';
         }
     }

@@ -1,7 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Users, Activity, Terminal, Shield } from 'lucide-react';
+import { Users, Activity, Terminal, Shield, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { exportToCsv } from '@/lib/export-csv';
 
 interface AuditLog {
     id: string;
@@ -48,6 +50,15 @@ export function OverviewTab({
     auditLogs,
     auditLoading,
 }: OverviewTabProps) {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(5);
+
+    const totalCount = auditLogs.length;
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const page = Math.min(currentPage, totalPages);
+    const startIndex = (page - 1) * pageSize;
+    const currentLogs = auditLogs.slice(startIndex, startIndex + pageSize);
+
     return (
         <>
             <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-iris-800 to-iris-600 p-6 text-white md:p-8">
@@ -125,10 +136,30 @@ export function OverviewTab({
             </div>
 
             <div className="space-y-4">
-                <h3 className="text-[15px] font-bold text-ink flex items-center gap-2">
-                    <Terminal size={17} className="text-muted" /> Log Aktivitas
-                    Sistem (Audit Logs)
-                </h3>
+                <div className="flex items-center justify-between">
+                    <h3 className="text-[15px] font-bold text-ink flex items-center gap-2">
+                        <Terminal size={17} className="text-muted" /> Log Aktivitas
+                        Sistem (Audit Logs)
+                    </h3>
+                    <button
+                        onClick={() =>
+                            exportToCsv(
+                                `audit_logs_${new Date().toISOString().split('T')[0]}.csv`,
+                                [
+                                    { key: 'created_at', label: 'Waktu' },
+                                    { key: 'user_name', label: 'Pengguna' },
+                                    { key: 'action', label: 'Aksi / Aktivitas' },
+                                    { key: 'ip_address', label: 'Alamat IP' },
+                                ],
+                                auditLogs as unknown as Record<string, unknown>[],
+                            )
+                        }
+                        disabled={auditLogs.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-surface text-[12px] font-semibold text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                        <Download size={14} /> Ekspor CSV
+                    </button>
+                </div>
                 <Card className="overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-[12px] border-collapse">
@@ -162,7 +193,7 @@ export function OverviewTab({
                                         </td>
                                     </tr>
                                 ) : (
-                                    auditLogs.map((log) => (
+                                    currentLogs.map((log) => (
                                         <tr
                                             key={log.id}
                                             className="hover:bg-surface2/30"
@@ -185,6 +216,59 @@ export function OverviewTab({
                             </tbody>
                         </table>
                     </div>
+
+                    {!auditLoading && totalCount > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-surface2/40 px-4 py-3 text-[12px] text-muted">
+                            <div className="flex items-center gap-2">
+                                <span>Baris per halaman:</span>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    className="rounded border border-border bg-surface px-2 py-1 text-[12px] text-ink focus:outline-none focus:ring-1 focus:ring-iris-500"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <span className="ml-2">
+                                    Menampilkan {startIndex + 1}–
+                                    {Math.min(startIndex + pageSize, totalCount)}{' '}
+                                    dari {totalCount} log
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((p) => Math.max(1, p - 1))
+                                    }
+                                    disabled={page === 1}
+                                    className="flex items-center justify-center size-7 rounded border border-border bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Halaman Sebelumnya"
+                                >
+                                    <ChevronLeft size={15} />
+                                </button>
+                                <span className="px-2 font-medium text-ink">
+                                    Halaman {page} dari {totalPages}
+                                </span>
+                                <button
+                                    onClick={() =>
+                                        setCurrentPage((p) =>
+                                            Math.min(totalPages, p + 1),
+                                        )
+                                    }
+                                    disabled={page === totalPages}
+                                    className="flex items-center justify-center size-7 rounded border border-border bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Halaman Selanjutnya"
+                                >
+                                    <ChevronRight size={15} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
         </>

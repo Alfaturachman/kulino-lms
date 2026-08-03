@@ -15,15 +15,10 @@ import { Textarea } from '@/components/ui/textarea';
 import {
     BookOpen,
     Users,
-    CheckCircle,
     FileCheck,
     Megaphone,
-    BarChart3,
     ArrowRight,
-    Plus,
-    Clock,
     Check,
-    AlertCircle,
     TrendingUp,
 } from 'lucide-react';
 
@@ -56,11 +51,9 @@ export default function LecturerDashboardClient({
         process.env.NEXT_PUBLIC_SUPABASE_URL.startsWith('http');
 
     const [lecturerCourses, setLecturerCourses] = useState<Course[]>([]);
-    const [allCourses, setAllCourses] = useState<Course[]>([]);
     const [submissions, setSubmissions] = useState<UngradedSubmission[]>([]);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-    const [loading, setLoading] = useState(true);
-
+    
     const [targetCourse, setTargetCourse] = useState('');
     const [newAnnTitle, setNewAnnTitle] = useState('');
     const [newAnnContent, setNewAnnContent] = useState('');
@@ -74,11 +67,9 @@ export default function LecturerDashboardClient({
     const fetchData = useCallback(async () => {
         if (!isSupabaseConfigured) {
             setLecturerCourses([]);
-            setAllCourses([]);
             setSubmissions([]);
             setAnnouncements([]);
-            setLoading(false);
-            return;
+                        return;
         }
 
         try {
@@ -102,26 +93,28 @@ export default function LecturerDashboardClient({
                     .eq('lecturer_id', userData.id)
                     .order('created_at', { ascending: false });
 
-                mapped = (classesData || []).map((cls: any) => ({
-                id: cls.id,
-                name: cls.courses?.name || '',
-                code: cls.courses?.code || '',
-                class_name: cls.class_name,
-                semester: cls.semester,
-                sks: cls.courses?.sks || 0,
-                teori: cls.courses?.teori,
-                praktek: cls.courses?.praktek,
-                lecturer: cls.users?.name || lecturerName,
-                description: cls.courses?.description || '',
-                status: cls.status,
-                icon: BookOpen,
-            }));
+                mapped = (classesData || []).map((clsItem) => {
+                    const cls = clsItem as Record<string, unknown>;
+                    const c = (Array.isArray(cls.courses) ? cls.courses[0] : cls.courses) as Record<string, unknown> | null;
+                    const u = (Array.isArray(cls.users) ? cls.users[0] : cls.users) as Record<string, unknown> | null;
+                    return {
+                        id: String(cls.id || ''),
+                        name: String(c?.name || ''),
+                        code: String(c?.code || ''),
+                        class_name: String(cls.class_name || ''),
+                        semester: String(cls.semester || ''),
+                        sks: Number(c?.sks || 0),
+                        teori: c?.teori ? Number(c.teori) : undefined,
+                        praktek: c?.praktek ? Number(c.praktek) : undefined,
+                        lecturer: String(u?.name || lecturerName),
+                        description: String(c?.description || ''),
+                        status: (cls.status as 'active' | 'completed') || 'active',
+                        icon: BookOpen,
+                    };
+                });
             }
             setLecturerCourses(mapped);
-            setAllCourses(mapped);
-            if (mapped.length > 0 && !targetCourse) {
-                setTargetCourse(mapped[0].id);
-            }
+            if (mapped.length > 0) { setTargetCourse((prev) => prev || mapped[0].id); }
 
             // Fetch submissions (ungraded + graded) for this lecturer's classes
             const classIds = mapped.map((c: Course) => c.id);
@@ -137,18 +130,25 @@ export default function LecturerDashboardClient({
                     .in('assignments.class_id', classIds);
 
                 setSubmissions(
-                    (subData || []).map((s: any) => ({
-                        id: s.id,
-                        studentName: s.users?.name || '',
-                        nim: s.users?.nim_nip || '',
-                        courseName: s.assignments?.courses?.name || '',
-                        assignmentTitle: s.assignments?.title || '',
-                        fileName: s.file_url?.split('/').pop() || '',
-                        submittedAt: s.submitted_at,
-                        grade: s.grade,
-                        feedback: s.feedback,
-                        status: s.grade != null ? 'graded' as const : 'pending' as const,
-                    })),
+                    (subData || []).map((sItem) => {
+                        const s = sItem as Record<string, unknown>;
+                        const u = (Array.isArray(s.users) ? s.users[0] : s.users) as Record<string, unknown> | null;
+                        const asg = (Array.isArray(s.assignments) ? s.assignments[0] : s.assignments) as Record<string, unknown> | null;
+                        const c = (asg && Array.isArray(asg.courses) ? asg.courses[0] : asg?.courses) as Record<string, unknown> | null;
+                        const fileUrl = String(s.file_url || '');
+                        return {
+                            id: String(s.id || ''),
+                            studentName: String(u?.name || ''),
+                            nim: String(u?.nim_nip || ''),
+                            courseName: String(c?.name || ''),
+                            assignmentTitle: String(asg?.title || ''),
+                            fileName: fileUrl.split('/').pop() || '',
+                            submittedAt: String(s.submitted_at || ''),
+                            grade: typeof s.grade === 'number' ? s.grade : undefined,
+                            feedback: typeof s.feedback === 'string' ? s.feedback : undefined,
+                            status: s.grade != null ? ('graded' as const) : ('pending' as const),
+                        };
+                    }),
                 );
 
                 // Fetch announcements for this lecturer's classes
@@ -158,8 +158,9 @@ export default function LecturerDashboardClient({
                     .in('class_id', classIds)
                     .order('date', { ascending: false });
 
+                type AnnRow = { id: string; class_id: string; title: string; content: string; date: string };
                 setAnnouncements(
-                    (annData || []).map((a: any) => ({
+                    (annData || []).map((a: AnnRow) => ({
                         id: a.id,
                         courseId: a.class_id,
                         title: a.title,
@@ -172,11 +173,11 @@ export default function LecturerDashboardClient({
         } catch (err) {
             console.error('Gagal mengambil data:', err);
         } finally {
-            setLoading(false);
-        }
-    }, [isSupabaseConfigured, supabase, lecturerName, targetCourse]);
+                    }
+    }, [isSupabaseConfigured, supabase, lecturerName]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchData();
     }, [fetchData]);
 
@@ -213,8 +214,8 @@ export default function LecturerDashboardClient({
             if (error) throw error;
             await fetchData();
             resetAnnForm();
-        } catch (err: any) {
-            alert('Gagal membuat pengumuman: ' + err.message);
+        } catch (err: unknown) {
+            alert('Gagal membuat pengumuman: ' + (err instanceof Error ? err.message : String(err)));
         }
     };
 
@@ -262,8 +263,8 @@ export default function LecturerDashboardClient({
             setGradingSubId(null);
             setGradeValue('');
             setFeedbackValue('');
-        } catch (err: any) {
-            alert('Gagal menyimpan nilai: ' + err.message);
+        } catch (err: unknown) {
+            alert('Gagal menyimpan nilai: ' + (err instanceof Error ? err.message : String(err)));
         }
     };
 

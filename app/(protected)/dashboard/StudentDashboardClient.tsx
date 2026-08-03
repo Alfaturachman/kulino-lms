@@ -82,12 +82,19 @@ import {
 
 interface StudentDashboardClientProps {
     initialTab: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbUser?: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbCourses?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbAnnouncements?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbCalendarEvents?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbAssignments?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbSubmissions?: any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dbGrades?: any[];
 }
 

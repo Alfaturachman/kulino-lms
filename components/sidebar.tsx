@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/auth';
 import {
     LayoutDashboard,
@@ -25,7 +25,6 @@ interface SidebarItem {
 }
 
 export function Sidebar() {
-    const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const activeTab = searchParams.get('tab') || 'overview';

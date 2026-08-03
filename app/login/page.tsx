@@ -1,3 +1,4 @@
+import React from 'react';
 import { LoginForm } from '@/components/login-form';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -17,13 +18,10 @@ export default function LoginPage() {
                     <Link href="/" className="flex flex-col items-center">
                         <span
                             className="text-[32px] font-black tracking-[0.05em] text-[#005695] select-none font-sans"
-                            style={
-                                {
+                            style={{
                                     fontWeight: 900,
                                     WebkitTextStroke: '1.5px #005695',
-                                    textStroke: '1.5px #005695',
-                                } as any
-                            }
+                                } as React.CSSProperties}
                         >
                             KULINO
                         </span>

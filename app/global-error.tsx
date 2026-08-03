@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { AlertCircle, RotateCcw, Home } from 'lucide-react';
 import { DM_Sans, DM_Mono } from 'next/font/google';
 import { captureError } from '@/lib/errors';
@@ -68,13 +69,13 @@ export default function GlobalError({
                             Coba Lagi
                         </button>
 
-                        <a
+                        <Link
                             href="/"
                             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-ink bg-white hover:bg-surface2 transition-colors"
                         >
                             <Home size={14} />
                             Kembali ke Beranda
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </body>

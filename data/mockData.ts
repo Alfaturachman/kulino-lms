@@ -5,7 +5,6 @@ import type {
     CalendarEvent,
     Announcement,
     Discussion,
-    DiscussionReply,
 } from '@/types/academic';
 
 // Initial mock data

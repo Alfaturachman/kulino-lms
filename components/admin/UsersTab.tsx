@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, CheckCircle, X, Pencil, Trash2 } from 'lucide-react';
+import { Search, Plus, CheckCircle, X, Pencil, Trash2, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { exportToCsv } from '@/lib/export-csv';
 
 interface UsersTabProps {
     usersList: User[];
@@ -41,7 +42,6 @@ export function UsersTab({
     usersLoading,
     currentUserId,
     showError,
-    showSuccess,
     showConfirm,
     onAddUser,
     onUpdateUser,
@@ -49,6 +49,8 @@ export function UsersTab({
 }: UsersTabProps) {
     const [userSearch, setUserSearch] = useState('');
     const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
+    const [usersPage, setUsersPage] = useState(1);
+    const [usersPageSize, setUsersPageSize] = useState(10);
 
     // Add user form
     const [uName, setUName] = useState('');
@@ -72,6 +74,15 @@ export function UsersTab({
         const matchesRole = roleFilter === 'all' || u.role === roleFilter;
         return matchesSearch && matchesRole;
     });
+
+    const totalUsersCount = filteredUsers.length;
+    const totalPages = Math.max(1, Math.ceil(totalUsersCount / usersPageSize));
+    const page = Math.min(usersPage, totalPages);
+    const startIndex = (page - 1) * usersPageSize;
+    const paginatedUsers = filteredUsers.slice(
+        startIndex,
+        startIndex + usersPageSize,
+    );
 
     const handleAddUser = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -156,14 +167,18 @@ export function UsersTab({
                                 placeholder="Cari user..."
                                 className="bg-transparent border-0 outline-none text-[12px] text-ink placeholder:text-muted w-full"
                                 value={userSearch}
-                                onChange={(e) => setUserSearch(e.target.value)}
+                                onChange={(e) => {
+                                    setUserSearch(e.target.value);
+                                    setUsersPage(1);
+                                }}
                             />
                         </div>
                         <select
                             value={roleFilter}
-                            onChange={(e) =>
-                                setRoleFilter(e.target.value as Role | 'all')
-                            }
+                            onChange={(e) => {
+                                setRoleFilter(e.target.value as Role | 'all');
+                                setUsersPage(1);
+                            }}
                             className="h-9 border border-border rounded-lg px-2 text-[12px] bg-white outline-none"
                         >
                             <option value="all">Semua Peran</option>
@@ -172,6 +187,25 @@ export function UsersTab({
                             <option value="tu">Tata Usaha</option>
                             <option value="admin">Admin</option>
                         </select>
+                        <button
+                            onClick={() =>
+                                exportToCsv(
+                                    `data_pengguna_${new Date().toISOString().split('T')[0]}.csv`,
+                                    [
+                                        { key: 'name', label: 'Nama Lengkap' },
+                                        { key: 'email', label: 'Email' },
+                                        { key: 'role', label: 'Peran (Role)' },
+                                        { key: 'nim_nip', label: 'NIM / NIP' },
+                                    ],
+                                    filteredUsers as unknown as Record<string, unknown>[],
+                                )
+                            }
+                            disabled={filteredUsers.length === 0}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-surface text-[12px] font-semibold text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            title="Ekspor Data Pengguna ke CSV"
+                        >
+                            <Download size={14} /> Ekspor
+                        </button>
                     </div>
                 </div>
 
@@ -207,7 +241,7 @@ export function UsersTab({
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredUsers.map((u) => (
+                                    paginatedUsers.map((u) => (
                                         <tr
                                             key={u.id}
                                             className="hover:bg-surface2/30"
@@ -272,6 +306,62 @@ export function UsersTab({
                             </tbody>
                         </table>
                     </div>
+
+                    {!usersLoading && totalUsersCount > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-surface2/40 px-4 py-3 text-[12px] text-muted">
+                            <div className="flex items-center gap-2">
+                                <span>Baris per halaman:</span>
+                                <select
+                                    value={usersPageSize}
+                                    onChange={(e) => {
+                                        setUsersPageSize(Number(e.target.value));
+                                        setUsersPage(1);
+                                    }}
+                                    className="rounded border border-border bg-surface px-2 py-1 text-[12px] text-ink focus:outline-none focus:ring-1 focus:ring-iris-500"
+                                >
+                                    <option value={5}>5</option>
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
+                                </select>
+                                <span className="ml-2">
+                                    Menampilkan {startIndex + 1}–
+                                    {Math.min(
+                                        startIndex + usersPageSize,
+                                        totalUsersCount,
+                                    )}{' '}
+                                    dari {totalUsersCount} pengguna
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    onClick={() =>
+                                        setUsersPage((p) => Math.max(1, p - 1))
+                                    }
+                                    disabled={page === 1}
+                                    className="flex items-center justify-center size-7 rounded border border-border bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Halaman Sebelumnya"
+                                >
+                                    <ChevronLeft size={15} />
+                                </button>
+                                <span className="px-2 font-medium text-ink">
+                                    Halaman {page} dari {totalPages}
+                                </span>
+                                <button
+                                    onClick={() =>
+                                        setUsersPage((p) =>
+                                            Math.min(totalPages, p + 1),
+                                        )
+                                    }
+                                    disabled={page === totalPages}
+                                    className="flex items-center justify-center size-7 rounded border border-border bg-surface text-ink hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                                    title="Halaman Selanjutnya"
+                                >
+                                    <ChevronRight size={15} />
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
 

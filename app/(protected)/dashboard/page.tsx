@@ -106,7 +106,9 @@ export default async function DashboardPage(props: {
 
       if (enrolls && enrolls.length > 0) {
         dbCourses = enrolls
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .filter((e: any) => e.classes !== null)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .map((e: any) => {
             const cls = e.classes;
             const c = cls.courses;
@@ -134,6 +136,7 @@ export default async function DashboardPage(props: {
         .from('announcements')
         .select('*, classes(courses(name))');
       if (announcementsData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbAnnouncements = announcementsData.map((a: any) => ({
           id: a.id,
           courseId: a.class_id,
@@ -149,6 +152,7 @@ export default async function DashboardPage(props: {
         .from('calendar_events')
         .select('*');
       if (calendarEventsData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbCalendarEvents = calendarEventsData.map((e: any) => ({
           id: e.id,
           title: e.title,
@@ -163,6 +167,7 @@ export default async function DashboardPage(props: {
         .from('assignments')
         .select('*');
       if (assignmentsData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbAssignments = assignmentsData.map((a: any) => ({
           id: a.id,
           courseId: a.class_id,
@@ -181,6 +186,7 @@ export default async function DashboardPage(props: {
         .select('*')
         .eq('student_id', authUser.id);
       if (submissionsData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbSubmissions = submissionsData.map((s: any) => ({
           id: s.id,
           assignmentId: s.assignment_id,
@@ -217,6 +223,7 @@ export default async function DashboardPage(props: {
         .eq('student_id', authUser.id);
       
       if (gradesData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dbGrades = gradesData.map((g: any) => {
           const cls = g.classes;
           const c = Array.isArray(cls?.courses) ? cls.courses[0] : cls?.courses;

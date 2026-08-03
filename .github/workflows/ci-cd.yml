@@ -10,7 +10,7 @@ jobs:
   lint-and-test:
     name: Lint, Test & Build
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

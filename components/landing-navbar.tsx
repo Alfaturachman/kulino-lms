@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
@@ -21,13 +22,10 @@ export function LandingNavbar() {
                     >
                         <span
                             className="text-[18px] font-black tracking-[0.05em] text-[#005695] select-none font-sans"
-                            style={
-                                {
+                            style={{
                                     fontWeight: 900,
                                     WebkitTextStroke: '1px #005695',
-                                    textStroke: '1px #005695',
-                                } as any
-                            }
+                                } as React.CSSProperties}
                         >
                             KULINO
                         </span>
