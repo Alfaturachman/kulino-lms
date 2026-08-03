@@ -14,6 +14,30 @@ export async function updateSession(request: NextRequest) {
         return supabaseResponse;
     }
 
+    const path = request.nextUrl.pathname;
+    const isProtectedPath =
+        path.startsWith('/dashboard') ||
+        path.startsWith('/lecturer') ||
+        path.startsWith('/staff') ||
+        path.startsWith('/admin') ||
+        path.startsWith('/courses');
+    const isAuthPath = path === '/' || path === '/login';
+
+    // Fast-path: jika tidak ada cookie Supabase auth pada request, hindari panggilan jaringan remote ke Supabase
+    const allCookies = request.cookies.getAll();
+    const hasAuthCookie = allCookies.some(
+        (c) => c.name.startsWith('sb-') || c.name.includes('auth'),
+    );
+
+    if (!hasAuthCookie) {
+        if (isProtectedPath) {
+            const url = request.nextUrl.clone();
+            url.pathname = '/login';
+            return NextResponse.redirect(url);
+        }
+        return supabaseResponse;
+    }
+
     const supabase = createServerClient(url, key, {
         cookies: {
             getAll() {
@@ -39,24 +63,9 @@ export async function updateSession(request: NextRequest) {
         },
     });
 
-    // IMPORTANT: Avoid writing any logic between createServerClient and
-    // supabase.auth.getUser(). A simple mistake can write user sessions to local
-    // memory, which can cause security issues.
     const {
         data: { user },
     } = await supabase.auth.getUser();
-
-    // Route protection:
-    // 1. If no user and trying to access protected paths, redirect to login.
-    const path = request.nextUrl.pathname;
-    const isProtectedPath =
-        path.startsWith('/dashboard') ||
-        path.startsWith('/lecturer') ||
-        path.startsWith('/staff') ||
-        path.startsWith('/admin') ||
-        path.startsWith('/courses');
-
-    const isAuthPath = path === '/' || path === '/login';
 
     if (!user && isProtectedPath) {
         const url = request.nextUrl.clone();

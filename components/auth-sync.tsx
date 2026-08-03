@@ -14,25 +14,36 @@ export function AuthSync() {
 
         const supabase = createClient();
 
+        let isProcessing = false;
+
         // 1. Cek session saat awal mount
         const verifySession = async () => {
+            if (isProcessing) return;
             try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const {
+                    data: { user },
+                } = await supabase.auth.getUser();
                 if (!user && useAuthStore.getState().isAuthenticated) {
-                    // Session Supabase sudah expired tetapi state lokal masih menyimpan user
+                    isProcessing = true;
                     await useAuthStore.getState().logout();
                 }
             } catch (error) {
                 console.error('Gagal memverifikasi session Supabase:', error);
+            } finally {
+                isProcessing = false;
             }
         };
         verifySession();
 
         // 2. Dengar perubahan auth state dari Supabase
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (event === 'SIGNED_OUT' || !session) {
-                if (useAuthStore.getState().isAuthenticated) {
+                if (useAuthStore.getState().isAuthenticated && !isProcessing) {
+                    isProcessing = true;
                     await useAuthStore.getState().logout();
+                    isProcessing = false;
                 }
             }
         });

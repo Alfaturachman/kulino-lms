@@ -1,3 +1,4 @@
+import React from 'react';
 import Link from 'next/link';
 import {
     BookOpen,
@@ -7,24 +8,45 @@ import {
     Presentation,
     Building2,
     ArrowRight,
-    Layout,
-    Calendar,
-    ChevronRight,
-    LineChart,
-    PlayCircle,
     MessageSquare,
     BarChart3,
     Bell,
     Users,
     Smartphone,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { LandingNavbar } from '@/components/landing-navbar';
 import { LandingFooter } from '@/components/landing-footer';
-import { LandingFAQ } from '@/components/landing-faq';
-import { LandingTabsShowcase } from '@/components/landing-tabs-showcase';
-import { LandingHowItWorks } from '@/components/landing-how-it-works';
-import { LandingStats } from '@/components/landing-stats';
-import { LandingTestimonials } from '@/components/landing-testimonials';
+
+const LandingFAQ = dynamic(
+    () => import('@/components/landing-faq').then((m) => m.LandingFAQ),
+    { ssr: true },
+);
+const LandingTabsShowcase = dynamic(
+    () =>
+        import('@/components/landing-tabs-showcase').then(
+            (m) => m.LandingTabsShowcase,
+        ),
+    { ssr: true },
+);
+const LandingHowItWorks = dynamic(
+    () =>
+        import('@/components/landing-how-it-works').then(
+            (m) => m.LandingHowItWorks,
+        ),
+    { ssr: true },
+);
+const LandingStats = dynamic(
+    () => import('@/components/landing-stats').then((m) => m.LandingStats),
+    { ssr: true },
+);
+const LandingTestimonials = dynamic(
+    () =>
+        import('@/components/landing-testimonials').then(
+            (m) => m.LandingTestimonials,
+        ),
+    { ssr: true },
+);
 
 const features = [
     {
@@ -77,8 +99,8 @@ export default function Home() {
             <main>
                 {/* Hero Section */}
                 <section className="relative pt-24 pb-32 overflow-hidden">
-                    {/* Background Pattern - minimal grid */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                    {/* Background Pattern - minimal clean grid */}
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]"></div>
 
                     <div className="mx-auto max-w-[1200px] px-6 relative z-10">
                         <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -97,8 +119,7 @@ export default function Home() {
                                             {
                                                 fontWeight: 900,
                                                 WebkitTextStroke: '2px #005695',
-                                                textStroke: '2px #005695',
-                                            } as any
+                                            } as React.CSSProperties
                                         }
                                     >
                                         KULINO
@@ -127,7 +148,7 @@ export default function Home() {
                             {/* Right: Bento Showcase */}
                             <div className="relative">
                                 {/* Decorative glow */}
-                                <div className="absolute -top-10 -right-10 w-64 h-64 bg-iris-500/5 rounded-full blur-3xl"></div>
+                                <div className="absolute -top-10 -right-10 w-64 h-64 bg-iris-500/5 rounded-full"></div>
 
                                 <div className="grid grid-cols-2 gap-4 relative z-10">
                                     {/* Card 1: Digital Space */}

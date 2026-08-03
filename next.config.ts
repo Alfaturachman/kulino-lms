@@ -8,10 +8,14 @@ const nextConfig: NextConfig = {
     outputFileTracingRoot: path.join(__dirname),
 };
 
-export default withSentryConfig(nextConfig, {
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-    silent: process.env.NODE_ENV !== 'production',
-    widenClientFileUpload: true,
-    telemetry: false,
-});
+const isProd = process.env.NODE_ENV === 'production';
+
+export default isProd
+    ? withSentryConfig(nextConfig, {
+          org: process.env.SENTRY_ORG,
+          project: process.env.SENTRY_PROJECT,
+          silent: true,
+          widenClientFileUpload: false,
+          telemetry: false,
+      })
+    : nextConfig;
