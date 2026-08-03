@@ -9,19 +9,19 @@
 
 ---
 
-## ⚡ Fitur Utama & Optimasi Terbaru (v1.2.0)
+## Fitur Utama & Optimasi Terbaru (v1.2.0)
 
-- 🚀 **Fast-Path Edge Middleware**: Pemangkasan *blocking network call* Supabase pada rute publik dari 5.7s menjadi **< 1ms**.
-- ⚡ **Turbopack Dev Mode**: Server pengembang berjalan secara instan dengan Next.js Turbopack (`next dev --turbopack`).
-- 🛡️ **Pemberantasan Memory Leak**: Resolusi *infinite event loop* pada sinkronisasi sesi Zustand & Supabase (penggunaan RAM browser stabil **< 100 MB**).
-- 🎨 **Akselerasi Grafis (GPU Optimization)**: Eliminasi efek CSS `mask-image` & `blur-3xl` yang membakar CPU peramban.
-- 📊 **Paginasi Interaktif**: Paginasi 10 data per halaman dengan pencarian & filter pada tabel *Seluruh Pengguna Sistem* (`UsersTab`) dan *Log Aktivitas Sistem* (`OverviewTab`).
-- 📥 **Ekspor CSV Sungguhan (*Downloadable CSV*)**: Utilitas `exportToCsv` untuk mengunduh log audit dan data pengguna secara langsung ke berkas `.csv`.
-- 🔐 **Kebijakan Pendaftaran Terpusat (*Strict Centralized Provisioning*)**: Seluruh akun (`mahasiswa`, `dosen`, `tu`, `admin`) didaftarkan secara terpusat oleh Admin/TU (tidak ada registrasi mandiri mahasiswa).
+- **Fast-Path Edge Middleware**: Pemangkasan *blocking network call* Supabase pada rute publik dari 5.7s menjadi **< 1ms**.
+- **Turbopack Dev Mode**: Server pengembang berjalan secara instan dengan Next.js Turbopack (`next dev --turbopack`).
+- **Pemberantasan Memory Leak**: Resolusi *infinite event loop* pada sinkronisasi sesi Zustand & Supabase (penggunaan RAM browser stabil **< 100 MB**).
+- **Akselerasi Grafis (GPU Optimization)**: Eliminasi efek CSS `mask-image` & `blur-3xl` yang membakar CPU peramban.
+- **Paginasi Interaktif**: Paginasi 10 data per halaman dengan pencarian & filter pada tabel *Seluruh Pengguna Sistem* (`UsersTab`) dan *Log Aktivitas Sistem* (`OverviewTab`).
+- **Ekspor CSV Sungguhan (*Downloadable CSV*)**: Utilitas `exportToCsv` untuk mengunduh log audit dan data pengguna secara langsung ke berkas `.csv`.
+- **Kebijakan Pendaftaran Terpusat (*Strict Centralized Provisioning*)**: Seluruh akun (`mahasiswa`, `dosen`, `tu`, `admin`) didaftarkan secara terpusat oleh Admin/TU (tidak ada registrasi mandiri mahasiswa).
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer      | Teknologi                      | Versi       |
 | ---------- | ------------------------------ | ----------- |
@@ -39,7 +39,7 @@
 
 ---
 
-## 🚀 Petunjuk Penggunaan (Getting Started)
+## Petunjuk Penggunaan (Getting Started)
 
 ### 1. Instalasi Dependensi
 ```bash
@@ -69,7 +69,7 @@ npm run build
 
 ---
 
-## 🔐 Akun Simulasi Login (Test Credentials)
+## Akun Simulasi Login (Test Credentials)
 
 | Role | Email Login | Password | Keterangan |
 | :--- | :--- | :--- | :--- |
@@ -80,7 +80,7 @@ npm run build
 
 ---
 
-## 📚 Berkas Dokumentasi Resmi (`docs/`)
+## Berkas Dokumentasi Resmi (`docs/`)
 
 Untuk informasi teknis mendalam mengenai arsitektur, basis data, dan panduan pengembang, silakan merujuk ke **[Developer Handbook (docs/README.md)](docs/README.md)**:
 
@@ -100,6 +100,6 @@ Untuk informasi teknis mendalam mengenai arsitektur, basis data, dan panduan pen
 
 ---
 
-## 📄 Lisensi
+## Lisensi
 
 Hak Cipta © 2026 Universitas Dian Nuswantoro (UDINUS) — Dikembangkan untuk Portofolio Sistem Informasi Akademik Digital.
