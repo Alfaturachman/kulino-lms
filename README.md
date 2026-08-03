@@ -114,4 +114,4 @@ Untuk informasi teknis mendalam mengenai arsitektur, basis data, dan panduan pen
 
 ## Lisensi
 
-Hak Cipta © 2026 Universitas Dian Nuswantoro (UDINUS) — Dikembangkan untuk Portofolio Sistem Informasi Akademik Digital.
+Proyek ini dikembangkan sebagai **Proyek Portofolio Pribadi** (Simulasi Frontend & UI Showcase LMS Akademik).
