@@ -47,7 +47,7 @@ Setiap tabel di skema `public` memiliki aturan RLS aktif untuk menghentikan akse
 Contoh kebijakan RLS penting:
 
 - **Tabel `submissions`**: Mahasiswa hanya diizinkan membaca, menambah, dan memperbarui data submission miliknya sendiri (`auth.uid() = student_id`). Dosen dan admin memiliki hak penuh untuk penilaian.
-- **Tabel `modules` & `quizzes`**: Mahasiswa hanya dapat melihat materi/kuis kelas jika materi tersebut sudah diterbitkan (`is_published = true`) dan mahasiswa terdaftar aktif dalam kelas tersebut (`class_id` terdaftar di tabel `enrollments` milik mahasiswa yang aktif).
+- **Tabel `modules` & `assessments`**: Mahasiswa hanya dapat melihat materi/penilaian kelas jika penilaian sudah diterbitkan (`is_published = true`) dan mahasiswa terdaftar aktif dalam kelas tersebut (`class_id` terdaftar di tabel `enrollments` milik mahasiswa yang aktif).
 - **Tabel `grades`**: Mahasiswa hanya diizinkan melihat nilainya sendiri (`auth.uid() = student_id`).
 
 ### 2.3 Pengamanan Fungsi Database (Secure Database Functions)

@@ -2,19 +2,19 @@
 
 ## KULINO — Spesifikasi Kebutuhan Perangkat Lunak
 
-**Versi:** 1.0 | **Tipe:** System Specification | **Status:** Approved
+**Versi:** 1.2 | **Tipe:** System Specification | **Status:** Approved (Tersinkronisasi)
 
 ---
 
 ## 1. System Overview & Boundaries
 
-KULINO adalah platform LMS berbasis Next.js App Router. Sistem ini mencakup rute publik dan terproteksi untuk 5 aktor utama: Guest, Mahasiswa, Dosen, Staff TU, dan Admin.
+KULINO adalah platform LMS berbasis Next.js App Router. Sistem ini mencakup rute publik dan terproteksi untuk 4 aktor ber-akun (Mahasiswa, Dosen, Staff TU, Admin) serta pengunjung anonim (tanpa login).
 
 ```
 +-----------------------------------------------------------------------+
 |                             KULINO LMS                                |
 |  +-------------------+  +-------------------+  +-------------------+  |
-|  | Student Dashboard |  | Lecturer Dashboard|  | Staff / TU Panel  |  |
+|  | Student Dashboard |  | Lecturer Dashboard|  | Staff TU Panel   |  |
 |  +-------------------+  +-------------------+  +-------------------+  |
 |  +-----------------------------------------------------------------+  |
 |  |                     Admin Control Panel                         |  |
@@ -35,31 +35,54 @@ KULINO adalah platform LMS berbasis Next.js App Router. Sistem ini mencakup rute
 id            UUID          Primary Key
 name          string        NOT NULL
 email         string        NOT NULL, UNIQUE
-role          enum          guest|mahasiswa|dosen|tu|admin
+role          enum          mahasiswa|dosen|tu|admin, Default 'mahasiswa'
 nim_nip       string        NOT NULL, UNIQUE
 avatar_url    string        Nullable
 created_at    datetime      Default CURRENT_TIMESTAMP
 ```
 
-### Course
+> Catatan: Pengunjung anonim (tanpa login) **bukan** record pada tabel `users`. Registrasi akun baru menghasilkan role default `mahasiswa`; perubahan role dilakukan oleh TU/Admin.
+
+### Course (Master Data Mata Kuliah)
 
 ```
 id            UUID          Primary Key
 name          string        NOT NULL
 code          string        NOT NULL, UNIQUE
-class_name    string        NOT NULL (e.g. "TI-3A")
-semester      string        NOT NULL (e.g. "Ganjil 2025/2026")
+kelompok_mk   string        NOT NULL, Default "Wajib Program Studi"
 sks           integer       NOT NULL, CHECK (sks > 0)
-lecturer_id   UUID          FK → User
+teori         integer       NOT NULL, Default 0
+praktek       integer       NOT NULL, Default 0
+kurikulum_id  UUID          FK → Kurikulum
 description   text          NOT NULL
 created_at    datetime
 ```
+
+> Catatan: `courses` adalah master data mata kuliah. Satu course dapat memiliki banyak kelas aktif per semester.
+
+### Class (Kelas Aktif / Penawaran Mata Kuliah)
+
+```
+id            UUID          Primary Key
+course_id     UUID          FK → Course
+class_name    string        NOT NULL (e.g. "TI-3A")
+semester      string        NOT NULL (e.g. "Ganjil 2025/2026")
+lecturer_id   UUID          FK → User
+day_of_week   string        Nullable (e.g. "Senin")
+start_time    time          Nullable
+end_time      time          Nullable
+room          string        Nullable
+status        enum          active|completed
+created_at    datetime
+```
+
+> Catatan: Kombinasi `(course_id, class_name, semester)` unik (UNIQUE). Seluruh entitas operasional (Module, Assessment, Enrollment, dsb.) mereferensikan `class_id`.
 
 ### Module
 
 ```
 id            UUID          Primary Key
-course_id     UUID          FK → Course
+class_id      UUID          FK → Class
 title         string        NOT NULL
 week_no       integer       NOT NULL, CHECK (1..16)
 type          enum          video|pdf|link|ppt
@@ -68,28 +91,37 @@ description   text          Nullable
 is_published  boolean       Default true
 ```
 
-### Assignment
+### Assessment (Penilaian: Tugas / UTS / UAS)
 
 ```
 id              UUID        Primary Key
-course_id       UUID        FK → Course
+class_id        UUID        FK → Class
 title           string      NOT NULL
 description     text        NOT NULL
-deadline        datetime    NOT NULL
+type            enum        task|uts|uas
+mode            enum        file_upload|online_quiz|manual
 weight_pct      integer     NOT NULL, CHECK (1..100)
-allowed_formats array       e.g. ["pdf", "docx", "zip"]
-max_size_mb     integer     Default 10
+open_at         datetime    Nullable (window mulai; utk uts/uas wajib)
+deadline        datetime    NOT NULL (batas akhir; utk online = close_at)
+duration_min    integer     Nullable, CHECK (>0)  (hanya mode online_quiz)
+allowed_formats array       Nullable, e.g. ["pdf", "docx", "zip"] (hanya mode file_upload)
+max_size_mb     integer     Nullable, Default 10 (hanya mode file_upload)
+is_published    boolean     Default false
+created_at      datetime
 ```
+
+> Catatan: Model penilaian fleksibel — UTS/UAS dapat berupa file upload, online quiz, atau manual; tugas pun dapat berupa quiz online. Kombinasi `type` + `mode` bebas sesuai dosen.
 
 ### Submission
 
 ```
 id            UUID          Primary Key
-assignment_id UUID          FK → Assignment
+assessment_id UUID          FK → Assessment
 student_id    UUID          FK → User
-file_url      string        NOT NULL
+file_url      string        NOT NULL (mode file_upload)
 submitted_at  datetime      Default CURRENT_TIMESTAMP
 is_late       boolean       Default false
+status        enum          Nullable, graded|revision_requested
 grade         integer       Nullable, CHECK (0..100)
 feedback      text          Nullable
 graded_at     datetime      Nullable
@@ -99,26 +131,43 @@ graded_at     datetime      Nullable
 
 ```
 id            UUID          Primary Key
-course_id     UUID          FK → Course
+class_id      UUID          FK → Class
 student_id    UUID          FK → User
-enrolled_at   datetime
 status        enum          active|dropped|completed
 progress_pct  integer       0–100  (computed: items_done / total_items × 100)
 created_at    datetime
 ```
 
-### Quiz
+> Catatan: Kombinasi `(student_id, class_id)` unik (UNIQUE).
+
+### Question
 
 ```
 id            UUID          Primary Key
-course_id     UUID          FK → Course
-title         string        NOT NULL
-type          enum          quiz|uts|uas
-duration_min  integer       NOT NULL
-open_at       datetime      NOT NULL
-close_at      datetime      NOT NULL
-is_published  boolean       Default false
+assessment_id UUID          FK → Assessment
+content       text          Isi soal
+type          enum          mcq|essay|true_false
+options       jsonb         Nullable, pilihan jawaban (MCQ)
+answer_key    text          Nullable, kunci jawaban (MCQ)
+order_no      integer       Urutan tampil soal
 ```
+
+> Catatan: Hanya relevan untuk Assessment dengan `mode = online_quiz`.
+
+### AssessmentAttempt
+
+```
+id            UUID          Primary Key
+assessment_id UUID          FK → Assessment
+student_id    UUID          FK → User
+started_at    datetime
+submitted_at  datetime      Nullable
+score         numeric(5,2)  Nullable, 0–100
+answers       jsonb         Jawaban mahasiswa per soal
+is_late       boolean       Default false
+```
+
+> Catatan: Untuk Assessment bertipe `uts`/`uas`, kombinasi `(assessment_id, student_id)` unik (UNIQUE) — **one-time attempt**.
 
 ### Notification
 
@@ -132,45 +181,33 @@ is_read       boolean       Default false
 created_at    datetime
 ```
 
-### Question
+### AuditLog
 
 ```
 id            UUID          Primary Key
-quiz_id       UUID          FK → Quiz
-content       text          Isi soal
-type          enum          mcq|essay|true_false
-options       jsonb         Nullable, pilihan jawaban (MCQ)
-answer_key    text          Nullable, kunci jawaban (MCQ)
-order_no      integer       Urutan tampil soal
+user_name     string        NOT NULL (operator yang melakukan aksi)
+action        text          NOT NULL (misal: "Login", "Membuat user baru")
+ip_address    string        Nullable
+created_at    datetime      Default CURRENT_TIMESTAMP
 ```
 
-### QuizAttempt
-
-```
-id            UUID          Primary Key
-quiz_id       UUID          FK → Quiz
-student_id    UUID          FK → User
-started_at    datetime
-submitted_at  datetime      Nullable
-score         numeric(5,2)  Nullable, 0–100
-answers       jsonb         Jawaban mahasiswa per soal
-is_late       boolean       Default false
-```
+> Catatan: Diisi otomatis oleh trigger DB (`trg_user_audit`, `trg_user_login`) — merepresentasikan BR-10. Rincian lihat `12_security.md` §7.
 
 ### Entitas Lain (Terdefinisi di DB Design)
 
 | Entitas         | Relasi Utama                          | Status     |
 | --------------- | ------------------------------------- | ---------- |
-| Discussion      | FK → Course                           | ✅ Selesai |
+| Discussion      | FK → Class                            | ✅ Selesai |
 | DiscussionReply | FK → Discussion                       | ✅ Selesai |
-| Announcement    | FK → Course                           | ✅ Selesai |
-| Attendance      | FK → Course, User                     | ✅ Selesai |
-| Grade           | FK → Course, User (rekap nilai akhir) | ✅ Selesai |
-| CalendarEvent   | FK → Course (nullable)                | ✅ Selesai |
-| Quiz            | FK → Course                           | ✅ Selesai |
-| Question        | FK → Quiz                             | ✅ Selesai |
-| QuizAttempt     | FK → Quiz, User                       | ✅ Selesai |
+| Announcement    | FK → Class                            | ✅ Selesai |
+| Attendance      | FK → Class, User                      | ✅ Selesai |
+| Grade           | FK → Class, User (rekap nilai akhir)  | ✅ Selesai |
+| CalendarEvent   | FK → Class (nullable)                 | ✅ Selesai |
+| Assessment      | FK → Class                            | ✅ Selesai |
+| Question        | FK → Assessment                       | ✅ Selesai |
+| AssessmentAttempt | FK → Assessment, User              | ✅ Selesai |
 | Notification    | FK → User                             | ✅ Selesai |
+| AuditLog        | System-generated (trigger DB)         | ✅ Selesai |
 
 ---
 
@@ -199,7 +236,7 @@ is_late       boolean       Default false
 ```
 /                   → Landing Page
 /login              → Login Form
-/register           → Register (Guest)
+/register           → Register (akun baru, role default mahasiswa)
 /courses            → Course Catalog (preview)
 /demo               → Demo Preview
 ```
@@ -210,8 +247,8 @@ is_late       boolean       Default false
 /dashboard                    → Student Dashboard
 /dashboard/course/[id]        → Course Detail (Student)
 /dashboard/course/[id]/material/[mid]  → Material Viewer
-/dashboard/course/[id]/assignment/[aid] → Assignment Detail
-/dashboard/course/[id]/quiz/[qid]      → Quiz/Exam
+/dashboard/course/[id]/assessment/[aid]             → Assessment Detail (upload / online quiz / info)
+/dashboard/course/[id]/assessment/[aid]/attempt     → Pengerjaan Online (mode online_quiz)
 
 /lecturer                     → Lecturer Dashboard
 /lecturer/course/[id]         → Course Management
@@ -281,7 +318,7 @@ flowchart TD
     LengthCheck -- Tidak --> Error1[Tampilkan Error: Password terlalu pendek] --> Input
     LengthCheck -- Ya --> AuthCheck{Credentials Cocok?}
     AuthCheck -- Tidak --> Error2[Tampilkan Error: Email/Password Salah] --> Input
-    AuthCheck -- Ya --> SaveSession[Simpan User ke LocalStorage & set Authenticated]
+    AuthCheck -- Ya --> SaveSession[Simpan Session di httpOnly Cookie via Supabase SSR & set Authenticated]
     SaveSession --> RoleCheck{Membaca Peran / Role User}
     RoleCheck -- mahasiswa --> RedirectM[Redirect ke /dashboard]
     RoleCheck -- dosen --> RedirectD[Redirect ke /lecturer]
@@ -295,13 +332,15 @@ flowchart TD
 
 ### Sequence Diagram (Key Flow: Submit Tugas)
 
+> *Diagram ini menggambarkan **mode mock / offline fallback** (`05_architecture.md` §6.1). Pada mode produksi, session tersimpan di httpOnly cookie via `@supabase/ssr`; localStorage hanya dipakai saat koneksi ke Supabase terputus.*
+
 ```mermaid
 sequenceDiagram
     autonumber
     actor M as Mahasiswa
     participant V as StudentDashboard UI
     participant S as AuthStore (Zustand)
-    participant API as Simulated API / LocalStorage
+    participant API as Simulated API / LocalStorage (Mock Fallback)
 
     M->>V: Pilih File & Click "Submit Tugas"
     activate V
@@ -319,58 +358,192 @@ sequenceDiagram
 
 ### Entity Relationship Diagram (ERD)
 
+Diagram berikut mencakup **seluruh 20 entitas** sesuai `06_database.md` §2 (Kamus Data).
+
 ```mermaid
 erDiagram
+    PRODI {
+        UUID id PK
+        string code
+        string name
+        string degree
+    }
+    KURIKULUM {
+        UUID id PK
+        UUID prodi_id FK
+        string name
+        integer year
+        boolean is_active
+    }
     USER {
         UUID id PK
         string name
         string email
         string role
         string nim_nip
+        UUID prodi_id FK
     }
     COURSE {
         UUID id PK
         string name
         string code
-        string class_name
         integer sks
+        UUID kurikulum_id FK
+        string description
+    }
+    CLASS {
+        UUID id PK
+        UUID course_id FK
+        string class_name
+        string semester
         UUID lecturer_id FK
+        string day_of_week
+        time start_time
+        time end_time
+        string room
+        string status
+    }
+    ENROLLMENT {
+        UUID id PK
+        UUID class_id FK
+        UUID student_id FK
+        string status
+        integer progress_pct
     }
     MODULE {
         UUID id PK
-        UUID course_id FK
+        UUID class_id FK
         string title
         integer week_no
         string type
         string content_url
     }
-    ASSIGNMENT {
+    ASSESSMENT {
         UUID id PK
-        UUID course_id FK
+        UUID class_id FK
         string title
-        datetime deadline
+        string type
+        string mode
         integer weight_pct
+        datetime open_at
+        datetime deadline
+        integer duration_min
     }
     SUBMISSION {
         UUID id PK
-        UUID assignment_id FK
+        UUID assessment_id FK
         UUID student_id FK
         string file_url
         datetime submitted_at
+        string status
         integer grade
     }
-    ENROLLMENT {
+    ANNOUNCEMENT {
         UUID id PK
-        UUID course_id FK
+        UUID class_id FK
+        string title
+        text content
+    }
+    DISCUSSION {
+        UUID id PK
+        UUID class_id FK
+        UUID author_id FK
+        string title
+        text content
+    }
+    DISCUSSION_REPLY {
+        UUID id PK
+        UUID discussion_id FK
+        UUID author_id FK
+        text content
+    }
+    ATTENDANCE {
+        UUID id PK
+        UUID class_id FK
         UUID student_id FK
-        integer progress_pct
+        integer week_no
+        string status
+    }
+    GRADE {
+        UUID id PK
+        UUID class_id FK
+        UUID student_id FK
+        numeric assignment_score
+        numeric midterm_score
+        numeric final_score
+        numeric participation_score
+        string final_grade_letter
+    }
+    CALENDAR_EVENT {
+        UUID id PK
+        string title
+        datetime date
+        string type
+        UUID class_id FK
+    }
+    QUESTION {
+        UUID id PK
+        UUID assessment_id FK
+        text content
+        string type
+        integer order_no
+    }
+    QUESTION_OPTION {
+        UUID id PK
+        UUID question_id FK
+        text option_text
+        boolean is_correct
+    }
+    ATTEMPT {
+        UUID id PK
+        UUID assessment_id FK
+        UUID student_id FK
+        datetime started_at
+        datetime submitted_at
+        numeric score
+        jsonb answers
+    }
+    NOTIFICATION {
+        UUID id PK
+        UUID user_id FK
+        string type
+        string message
+        UUID related_id
+        boolean is_read
+    }
+    AUDITLOG {
+        UUID id PK
+        string user_name
+        text action
+        string ip_address
     }
 
-    USER ||--o{ COURSE : "teaches"
+    PRODI ||--o{ KURIKULUM : "has"
+    PRODI ||--o{ USER : "has"
+    KURIKULUM ||--o{ COURSE : "owns"
+    COURSE ||--o{ CLASS : "offers"
+    USER ||--o{ CLASS : "teaches"
+    CLASS ||--o{ ENROLLMENT : "has_students"
     USER ||--o{ ENROLLMENT : "enrolled_in"
-    COURSE ||--o{ ENROLLMENT : "has_students"
-    COURSE ||--o{ MODULE : "contains"
-    COURSE ||--o{ ASSIGNMENT : "assigns"
-    ASSIGNMENT ||--o{ SUBMISSION : "has_submissions"
+    CLASS ||--o{ MODULE : "contains"
+    CLASS ||--o{ ASSESSMENT : "assigns"
+    ASSESSMENT ||--o{ SUBMISSION : "has_submissions"
     USER ||--o{ SUBMISSION : "submits"
+    CLASS ||--o{ ANNOUNCEMENT : "broadcasts"
+    CLASS ||--o{ DISCUSSION : "has"
+    USER ||--o{ DISCUSSION : "authors"
+    DISCUSSION ||--o{ DISCUSSION_REPLY : "has_replies"
+    USER ||--o{ DISCUSSION_REPLY : "replies"
+    CLASS ||--o{ ATTENDANCE : "records"
+    USER ||--o{ ATTENDANCE : "attends"
+    CLASS ||--o{ GRADE : "grades"
+    USER ||--o{ GRADE : "receives"
+    CLASS ||--o{ CALENDAR_EVENT : "schedules"
+    ASSESSMENT ||--o{ QUESTION : "contains"
+    QUESTION ||--o{ QUESTION_OPTION : "has_options"
+    ASSESSMENT ||--o{ ATTEMPT : "attempted_by"
+    USER ||--o{ ATTEMPT : "attempts"
+    USER ||--o{ NOTIFICATION : "receives"
 ```
+
+> Catatan: `AUDITLOG` diisi otomatis oleh trigger DB (BR-10) tanpa FK langsung ke entitas lain — lihat `12_security.md` §7.

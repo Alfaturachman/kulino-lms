@@ -19,7 +19,7 @@ Institusi pendidikan tinggi menghadapi keterbatasan infrastruktur pembelajaran d
 | ------------------------------------------ | --------- | ---------------------------------- |
 | Tingkat partisipasi aktif mahasiswa        | 85%       | Naik dari 60% saat ini             |
 | Digitalisasi distribusi materi & penugasan | 100%      | Paperless workflow                 |
-| Role-based access control                  | 5 Peran   | Guest, Mahasiswa, Dosen, TU, Admin |
+| Role-based access control                  | 4 Peran + Visitor | Mahasiswa, Dosen, TU, Admin + pengunjung anonim |
 | Waktu loading halaman rata-rata            | < 3 detik | Performance target                 |
 
 ---
@@ -36,7 +36,7 @@ Institusi pendidikan tinggi menghadapi keterbatasan infrastruktur pembelajaran d
 ### Dosen Pengampu
 
 - **Peran:** Content creator & evaluator
-- **Kebutuhan:** Tools untuk upload materi, kelola assignment, grade submission, dan monitor keaktifan mahasiswa secara efisien tanpa pembelajaran teknis yang panjang.
+- **Kebutuhan:** Tools untuk upload materi, kelola penilaian (tugas/UTS/UAS), grade submission, dan monitor keaktifan mahasiswa secara efisien tanpa pembelajaran teknis yang panjang.
 - **Prioritas:** High
 
 ### Staff TU & Kepala TU
@@ -57,8 +57,8 @@ Institusi pendidikan tinggi menghadapi keterbatasan infrastruktur pembelajaran d
 
 | ID    | Kebutuhan Bisnis                                                              | Prioritas   | Kategori       |
 | ----- | ----------------------------------------------------------------------------- | ----------- | -------------- |
-| BR-01 | Platform harus mendukung alur akademik semester penuh (14 minggu + UTS + UAS) | Must Have   | Academic       |
-| BR-02 | Sistem role-based access untuk 5 tipe pengguna dengan hak yang berbeda        | Must Have   | Access Control |
+| BR-01 | Platform harus mendukung alur akademik semester penuh (14 minggu materi + 1 UTS + 1 UAS = 16 slot) | Must Have   | Academic       |
+| BR-02 | Sistem role-based access untuk 4 tipe pengguna ber-akun dengan hak yang berbeda; pengunjung anonim tanpa akses rute terproteksi        | Must Have   | Access Control |
 | BR-03 | Dukungan asynchronous learning — materi dapat diakses kapan saja              | Must Have   | Learning Model |
 | BR-04 | Sistem notifikasi deadline untuk mengurangi keterlambatan pengumpulan tugas   | Should Have | Engagement     |
 | BR-05 | Dashboard analytics untuk monitoring performa akademik mahasiswa dan dosen    | Should Have | Reporting      |

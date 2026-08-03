@@ -28,9 +28,9 @@ Menyimpan informasi seluruh akun pengguna (Mahasiswa, Dosen, Staff TU, Admin).
 | `name`       | `VARCHAR(100)` | NOT NULL                                   | Nama lengkap pengguna.                                   |
 | `email`      | `VARCHAR(100)` | NOT NULL, UNIQUE                           | Alamat email (digunakan untuk login).                    |
 | `password`   | `VARCHAR(255)` | NOT NULL                                   | Password terenkripsi (hash bcrypt).                      |
-| `nim_nip`    | `VARCHAR(20)`  | NOT NULL, UNIQUE                           | NIM (Mahasiswa) atau NIP (Dosen/Staff).                  |
-| `role`       | `VARCHAR(20)`  | NOT NULL, Default 'mahasiswa'              | Hak akses: `guest`, `mahasiswa`, `dosen`, `tu`, `admin`. |
-| `prodi_id`   | `UUID`         | FK → `prodi(id)`, ON DELETE SET NULL, NULL | Program studi asal pengguna (NULL untuk admin/guest/TU). |
+| `nim_nip`    | `VARCHAR(20)`  | NOT NULL, UNIQUE                           | NIM (Mahasiswa) atau NIP (Dosen/TU).                     |
+| `role`       | `VARCHAR(20)`  | NOT NULL, Default 'mahasiswa'              | Hak akses: `mahasiswa`, `dosen`, `tu`, `admin`.          |
+| `prodi_id`   | `UUID`         | FK → `prodi(id)`, ON DELETE SET NULL, NULL | Program studi asal pengguna (NULL untuk admin/TU).       |
 | `created_at` | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                | Waktu pendaftaran akun.                                  |
 | `updated_at` | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                | Waktu pembaruan akun terakhir.                           |
 
@@ -62,20 +62,23 @@ _Batasan Tambahan:_ Kombinasi `sks` harus merupakan hasil penjumlahan `teori` da
 
 Menyimpan informasi kelas aktif/penawaran mata kuliah per semester.
 
-| Nama Kolom    | Tipe Data     | Batasan (Constraints)                                     | Keterangan                                                                          |
-| :------------ | :------------ | :-------------------------------------------------------- | :---------------------------------------------------------------------------------- |
-| `id`          | `UUID`        | Primary Key, Default `gen_random_uuid()`                  | Pengidentifikasi unik kelas aktif.                                                  |
-| `course_id`   | `UUID`        | FK → `courses(id)`, ON DELETE CASCADE                     | ID mata kuliah master.                                                              |
-| `class_name`  | `VARCHAR(20)` | NOT NULL                                                  | Nama kelas akademik (misal: `TI-3A`).                                               |
-| `semester`    | `VARCHAR(30)` | NOT NULL                                                  | Semester berjalan (misal: `Ganjil 2025/2026`).                                      |
-| `lecturer_id` | `UUID`        | FK → `users(id)`, ON DELETE RESTRICT                      | Dosen pengampu kelas.                                                               |
-| `day_of_week` | `VARCHAR(15)` | NULL, Check `day_of_week` in ('Senin', ... 'Minggu')      | Hari pelaksanaan kelas (misal: 'Senin').                                            |
-| `start_time`  | `TIME`        | NULL                                                      | Waktu mulai perkuliahan (misal: '08:00:00').                                        |
-| `end_time`    | `TIME`        | NULL                                                      | Waktu selesai perkuliahan (misal: '10:30:00').                                      |
-| `room`        | `VARCHAR(50)` | NULL                                                      | Ruangan tempat perkuliahan (misal: 'Ruang H.4.1').                                  |
-| `status`      | `VARCHAR(15)` | Default 'active'                                          | Status kelas: `active` atau `completed`.                                            |
-| `created_at`  | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`                               | Tanggal pembuatan kelas aktif.                                                      |
-| `updated_at`  | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`                               | Waktu pembaruan kelas aktif terakhir.                                               |
+| Nama Kolom     | Tipe Data     | Batasan (Constraints)                                     | Keterangan                                                                          |
+| :------------- | :------------ | :-------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `id`           | `UUID`        | Primary Key, Default `gen_random_uuid()`                  | Pengidentifikasi unik kelas aktif.                                                  |
+| `course_id`    | `UUID`        | FK → `courses(id)`, ON DELETE CASCADE                     | ID mata kuliah master.                                                              |
+| `class_name`   | `VARCHAR(20)` | NOT NULL                                                  | Nama kelas akademik (misal: `TI-3A`).                                               |
+| `semester`     | `VARCHAR(30)` | NOT NULL                                                  | Semester berjalan (misal: `Ganjil 2025/2026`).                                      |
+| `lecturer_id`  | `UUID`        | FK → `users(id)`, ON DELETE RESTRICT                      | Dosen pengampu kelas.                                                               |
+| `day_of_week`  | `VARCHAR(15)` | NULL, Check `day_of_week` in ('Senin', ... 'Minggu')      | Hari pelaksanaan kelas (misal: 'Senin').                                            |
+| `start_time`   | `TIME`        | NULL                                                      | Waktu mulai perkuliahan (misal: '08:00:00').                                        |
+| `end_time`     | `TIME`        | NULL                                                      | Waktu selesai perkuliahan (misal: '10:30:00').                                      |
+| `room`         | `VARCHAR(50)` | NULL                                                      | Ruangan tempat perkuliahan (misal: 'Ruang H.4.1').                                  |
+| `zoom_link`    | `TEXT`        | NULL                                                      | Link video conference / Zoom kelas online.                                          |
+| `contact_info` | `TEXT`        | NULL                                                      | Informasi kontak perkuliahan / grup WhatsApp.                                       |
+| `komting_info` | `TEXT`        | NULL                                                      | Informasi ketua tingkat / komting kelas.                                            |
+| `status`       | `VARCHAR(15)` | Default 'active'                                          | Status kelas: `active` atau `completed`.                                            |
+| `created_at`   | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`                               | Tanggal pembuatan kelas aktif.                                                      |
+| `updated_at`   | `TIMESTAMP`   | Default `CURRENT_TIMESTAMP`                               | Waktu pembaruan kelas aktif terakhir.                                               |
 
 _Batasan Tambahan:_ 
 1. Kombinasi `(course_id, class_name, semester)` harus unik (`UNIQUE`) untuk menghindari pembuatan kelas yang sama berulang kali.
@@ -118,37 +121,43 @@ Menyimpan materi pembelajaran mingguan per kelas.
 
 ---
 
-### 2.6 Tabel `assignments`
+### 2.6 Tabel `assessments`
 
-Menyimpan data instruksi penugasan akademik/ujian dari dosen.
+Menyimpan data penilaian akademik (tugas, UTS, UAS) yang dibuat dosen. Model penilaian **fleksibel**: setiap penilaian memiliki `type` (task/uts/uas) dan `mode` (file_upload/online_quiz/manual) yang dapat dikombinasikan bebas.
 
-| Nama Kolom        | Tipe Data       | Batasan (Constraints)                          | Keterangan                                          |
-| :---------------- | :-------------- | :--------------------------------------------- | :-------------------------------------------------- |
-| `id`              | `UUID`          | Primary Key, Default `gen_random_uuid()`       | Pengidentifikasi unik tugas.                        |
-| `class_id`        | `UUID`          | FK → `classes(id)`, ON DELETE CASCADE          | ID kelas terkait.                                   |
-| `title`           | `VARCHAR(150)`  | NOT NULL                                       | Judul penugasan.                                    |
-| `description`     | `TEXT`          | NOT NULL                                       | Petunjuk pengerjaan tugas & rubrik penilaian.       |
-| `deadline`        | `TIMESTAMP`     | NOT NULL                                       | Tanggal dan waktu batas pengumpulan.                |
-| `weight_pct`      | `INTEGER`       | NOT NULL, Check `weight_pct BETWEEN 1 AND 100` | Bobot nilai tugas terhadap total nilai (%).         |
-| `allowed_formats` | `VARCHAR(50)[]` | NOT NULL                                       | Ekstensi file yang diizinkan (misal: `pdf`, `zip`). |
-| `max_size_mb`     | `INTEGER`       | Default 10                                     | Batas maksimal ukuran file (MB).                    |
-| `created_at`      | `TIMESTAMP`     | Default `CURRENT_TIMESTAMP`                    | Tanggal penugasan diterbitkan.                      |
+| Nama Kolom        | Tipe Data       | Batasan (Constraints)                          | Keterangan                                                                 |
+| :---------------- | :-------------- | :--------------------------------------------- | :------------------------------------------------------------------------- |
+| `id`              | `UUID`          | Primary Key, Default `gen_random_uuid()`       | Pengidentifikasi unik penilaian.                                           |
+| `class_id`        | `UUID`          | FK → `classes(id)`, ON DELETE CASCADE          | ID kelas terkait.                                                          |
+| `title`           | `VARCHAR(150)`  | NOT NULL                                       | Judul penilaian (tugas/UTS/UAS).                                           |
+| `description`     | `TEXT`          | NOT NULL                                       | Petunjuk pengerjaan & rubrik penilaian.                                    |
+| `type`            | `VARCHAR(10)`   | NOT NULL, Check `type IN ('task', 'uts', 'uas')` | Jenis penilaian: tugas, UTS, atau UAS.                                    |
+| `mode`            | `VARCHAR(15)`   | NOT NULL, Check `mode IN ('file_upload', 'online_quiz', 'manual')` | Bentuk penilaian sesuai dosen.                    |
+| `weight_pct`      | `INTEGER`       | NOT NULL, Check `weight_pct BETWEEN 1 AND 100` | Bobot nilai terhadap total nilai (%).                                      |
+| `open_at`         | `TIMESTAMP`     | NULL                                           | Waktu mulai akses (wajib untuk UTS/UAS).                                   |
+| `deadline`        | `TIMESTAMP`     | NOT NULL                                       | Batas akhir (untuk mode online = waktu tutup/close).                       |
+| `duration_min`    | `INTEGER`       | NULL, Check `duration_min > 0`                 | Durasi pengerjaan (khusus mode `online_quiz`).                             |
+| `allowed_formats` | `VARCHAR(50)[]` | NULL                                           | Ekstensi file yang diizinkan (khusus mode `file_upload`, misal: `pdf`, `zip`). |
+| `max_size_mb`     | `INTEGER`       | NULL, Default 10                               | Batas maksimal ukuran file (khusus mode `file_upload`).                    |
+| `is_published`    | `BOOLEAN`       | Default FALSE                                  | Status visibilitas ke mahasiswa.                                           |
+| `created_at`      | `TIMESTAMP`     | Default `CURRENT_TIMESTAMP`                    | Tanggal penilaian diterbitkan.                                             |
 
 ---
 
 ### 2.7 Tabel `submissions`
 
-Menyimpan data pengumpulan tugas oleh mahasiswa.
+Menyimpan data pengumpulan file oleh mahasiswa (khusus penilaian mode `file_upload`). Untuk mode `online_quiz`, lihat tabel `assessment_attempts` (2.17).
 
 | Nama Kolom      | Tipe Data      | Batasan (Constraints)                     | Keterangan                                                         |
 | :-------------- | :------------- | :---------------------------------------- | :----------------------------------------------------------------- |
 | `id`            | `UUID`         | Primary Key, Default `gen_random_uuid()`  | Pengidentifikasi unik pengumpulan.                                 |
-| `assignment_id` | `UUID`         | FK → `assignments(id)`, ON DELETE CASCADE | ID penugasan terkait.                                              |
+| `assessment_id` | `UUID`         | FK → `assessments(id)`, ON DELETE CASCADE | ID penilaian terkait.                                              |
 | `student_id`    | `UUID`         | FK → `users(id)`, ON DELETE CASCADE       | ID mahasiswa pengumpul tugas.                                      |
 | `file_url`      | `VARCHAR(255)` | NOT NULL                                  | Nama/tautan file yang dikumpulkan.                                 |
 | `submitted_at`  | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`               | Waktu pengumpulan tugas.                                           |
 | `is_late`       | `BOOLEAN`      | Default FALSE                             | Status terlambat (terisi otomatis jika `submitted_at > deadline`). |
 | `version`       | `INTEGER`      | Default 1                                 | Versi pengumpulan (untuk tracking revisi file).                    |
+| `status`        | `VARCHAR(15)`  | NULL, Check `status IN ('graded', 'revision_requested')` | Status penilaian dosen (NULL = belum dinilai).      |
 | `grade`         | `INTEGER`      | NULL, Check `grade BETWEEN 0 AND 100`     | Nilai angka yang diberikan dosen.                                  |
 | `feedback`      | `TEXT`         | NULL                                      | Umpan balik/catatan dari dosen.                                    |
 | `graded_at`     | `TIMESTAMP`    | NULL                                      | Tanggal pemberian nilai oleh dosen.                                |
@@ -239,7 +248,7 @@ Menyimpan rekap nilai akhir kumulatif mahasiswa per kelas untuk kebutuhan KHS.
 | `id`                  | `UUID`         | Primary Key, Default `gen_random_uuid()`      | Pengidentifikasi unik rekap nilai.        |
 | `student_id`          | `UUID`         | FK → `users(id)`, ON DELETE CASCADE           | ID mahasiswa.                             |
 | `class_id`            | `UUID`         | FK → `classes(id)`, ON DELETE CASCADE         | ID kelas terkait.                         |
-| `assignment_score`    | `NUMERIC(5,2)` | CHECK `assignment_score BETWEEN 0 AND 100`    | Nilai rata-rata tugas (bobot 40%).        |
+| `assignment_score`    | `NUMERIC(5,2)` | CHECK `assignment_score BETWEEN 0 AND 100`    | Nilai rata-rata penilaian bertipe `task` (bobot 40%).        |
 | `midterm_score`       | `NUMERIC(5,2)` | CHECK `midterm_score BETWEEN 0 AND 100`       | Nilai Ujian Tengah Semester (bobot 25%).  |
 | `final_score`         | `NUMERIC(5,2)` | CHECK `final_score BETWEEN 0 AND 100`         | Nilai Ujian Akhir Semester (bobot 25%).   |
 | `participation_score` | `NUMERIC(5,2)` | CHECK `participation_score BETWEEN 0 AND 100` | Nilai partisipasi/keaktifan (bobot 10%).  |
@@ -250,35 +259,34 @@ _Batasan Tambahan:_ Kombinasi `(student_id, class_id)` harus unik (`UNIQUE`).
 
 ---
 
-### 2.14 Tabel `quizzes`
+### 2.14 Matriks Mode Penilaian
 
-Menyimpan data konfigurasi kuis, UTS, dan UAS per kelas aktif.
+Model penilaian fleksibel (m4) memetakan kombinasi `type` × `mode` pada tabel `assessments` (2.6) ke penyimpanan jawaban:
 
-| Nama Kolom     | Tipe Data      | Batasan (Constraints)                            | Keterangan                                      |
-| :------------- | :------------- | :----------------------------------------------- | :---------------------------------------------- |
-| `id`           | `UUID`         | Primary Key, Default `gen_random_uuid()`         | Pengidentifikasi unik kuis.                     |
-| `class_id`     | `UUID`         | FK → `classes(id)`, ON DELETE CASCADE            | ID kelas terkait.                               |
-| `title`        | `VARCHAR(150)` | NOT NULL                                         | Nama kuis/ujian.                                |
-| `type`         | `VARCHAR(10)`  | NOT NULL, Check `type IN ('quiz', 'uts', 'uas')` | Jenis: kuis reguler, UTS, atau UAS.             |
-| `duration_min` | `INTEGER`      | NOT NULL, Check `duration_min > 0`               | Durasi pengerjaan dalam menit.                  |
-| `open_at`      | `TIMESTAMP`    | NOT NULL                                         | Waktu kuis mulai dapat diakses mahasiswa.       |
-| `close_at`     | `TIMESTAMP`    | NOT NULL                                         | Waktu kuis ditutup (auto-submit jika terlewat). |
-| `is_published` | `BOOLEAN`      | Default FALSE                                    | Status visibilitas kuis ke mahasiswa.           |
-| `created_at`   | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                      | Tanggal kuis dibuat.                            |
+| `type`              | `mode`          | Penyimpanan jawaban          | Nilai diisi oleh                          |
+| :------------------ | :-------------- | :--------------------------- | :---------------------------------------- |
+| `task`              | `file_upload`   | `submissions` (2.7)          | Dosen (manual grading + feedback)         |
+| `task`              | `online_quiz`   | `assessment_attempts` (2.17) | Otomatis (MCQ/TF) + dosen (esai)          |
+| `task`              | `manual`        | —                            | Dosen input nilai langsung ke `grades`    |
+| `uts` / `uas`       | `online_quiz`   | `assessment_attempts` (2.17) | Otomatis (MCQ/TF) + dosen (esai)          |
+| `uts` / `uas`       | `file_upload`   | `submissions` (2.7)          | Dosen (manual grading + feedback)         |
+| `uts` / `uas`       | `manual`        | —                            | Dosen input nilai langsung ke `grades`    |
+
+Soal pilihan ganda/benar-salah hanya berlaku untuk mode `online_quiz` (tabel `questions` 2.15 & `question_options` 2.16).
 
 ---
 
 ### 2.15 Tabel `questions`
 
-Menyimpan soal-soal yang terdapat dalam sebuah kuis.
+Menyimpan soal-soal untuk penilaian mode `online_quiz` (task/UTS/UAS berbasis CBT).
 
-| Nama Kolom | Tipe Data     | Batasan (Constraints)                                    | Keterangan                                        |
-| :--------- | :------------ | :------------------------------------------------------- | :------------------------------------------------ |
-| `id`       | `UUID`        | Primary Key, Default `gen_random_uuid()`                 | Pengidentifikasi unik soal.                       |
-| `quiz_id`  | `UUID`        | FK → `quizzes(id)`, ON DELETE CASCADE                    | ID kuis tempat soal berada.                       |
-| `content`  | `TEXT`        | NOT NULL                                                 | Isi teks soal.                                    |
-| `type`     | `VARCHAR(15)` | NOT NULL, Check `type IN ('mcq', 'essay', 'true_false')` | Tipe soal: pilihan ganda, esai, atau benar/salah. |
-| `order_no` | `INTEGER`     | NOT NULL                                                 | Urutan tampil soal dalam kuis.                    |
+| Nama Kolom    | Tipe Data     | Batasan (Constraints)                                    | Keterangan                                        |
+| :------------ | :------------ | :------------------------------------------------------- | :------------------------------------------------ |
+| `id`          | `UUID`        | Primary Key, Default `gen_random_uuid()`                 | Pengidentifikasi unik soal.                       |
+| `assessment_id` | `UUID`      | FK → `assessments(id)`, ON DELETE CASCADE                | ID penilaian (mode `online_quiz`) tempat soal.    |
+| `content`     | `TEXT`        | NOT NULL                                                 | Isi teks soal.                                    |
+| `type`        | `VARCHAR(15)` | NOT NULL, Check `type IN ('mcq', 'essay', 'true_false')` | Tipe soal: pilihan ganda, esai, atau benar/salah. |
+| `order_no`    | `INTEGER`     | NOT NULL                                                 | Urutan tampil soal dalam penilaian.               |
 
 ---
 
@@ -297,22 +305,22 @@ Menyimpan pilihan jawaban untuk soal bertipe Pilihan Ganda (MCQ).
 
 ---
 
-### 2.17 Tabel `quiz_attempts`
+### 2.17 Tabel `assessment_attempts`
 
-Menyimpan hasil pengerjaan kuis oleh mahasiswa.
+Menyimpan hasil pengerjaan penilaian mode `online_quiz` oleh mahasiswa.
 
 | Nama Kolom     | Tipe Data      | Batasan (Constraints)                    | Keterangan                                           |
 | :------------- | :------------- | :--------------------------------------- | :--------------------------------------------------- |
 | `id`           | `UUID`         | Primary Key, Default `gen_random_uuid()` | Pengidentifikasi unik attempt.                       |
-| `quiz_id`      | `UUID`         | FK → `quizzes(id)`, ON DELETE CASCADE    | ID kuis yang dikerjakan.                             |
+| `assessment_id`| `UUID`         | FK → `assessments(id)`, ON DELETE CASCADE| ID penilaian (mode `online_quiz`) yang dikerjakan.   |
 | `student_id`   | `UUID`         | FK → `users(id)`, ON DELETE CASCADE      | ID mahasiswa yang mengerjakan.                       |
 | `started_at`   | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`              | Waktu mahasiswa mulai mengerjakan.                   |
 | `submitted_at` | `TIMESTAMP`    | NULL                                     | Waktu pengumpulan jawaban (NULL jika belum selesai). |
-| `score`        | `NUMERIC(5,2)` | NULL, Check `score BETWEEN 0 AND 100`    | Nilai akhir kuis (dihitung otomatis untuk MCQ).      |
+| `score`        | `NUMERIC(5,2)` | NULL, Check `score BETWEEN 0 AND 100`    | Nilai akhir (dihitung otomatis untuk MCQ).           |
 | `answers`      | `JSONB`        | NOT NULL                                 | Jawaban mahasiswa per soal dalam format JSON.        |
-| `is_late`      | `BOOLEAN`      | Default FALSE                            | Apakah dikumpulkan setelah `close_at` kuis.          |
+| `is_late`      | `BOOLEAN`      | Default FALSE                            | Apakah dikumpulkan setelah `deadline` penilaian.     |
 
-_Batasan Tambahan:_ Untuk kuis bertipe `uts` dan `uas`, kombinasi `(quiz_id, student_id)` harus unik (one-time attempt).
+_Batasan Tambahan:_ Untuk penilaian bertipe `uts` dan `uas`, kombinasi `(assessment_id, student_id)` harus unik (one-time attempt).
 
 ---
 
@@ -326,7 +334,7 @@ Menyimpan notifikasi personal yang dikirim ke pengguna.
 | `user_id`    | `UUID`         | FK → `users(id)`, ON DELETE CASCADE                                                    | ID pengguna penerima notifikasi.                     |
 | `type`       | `VARCHAR(20)`  | NOT NULL, Check `type IN ('deadline', 'grade', 'discussion', 'admin', 'announcement')` | Kategori notifikasi.                                 |
 | `message`    | `VARCHAR(255)` | NOT NULL                                                                               | Teks isi notifikasi.                                 |
-| `related_id` | `UUID`         | NULL                                                                                   | ID entitas terkait (misal: ID tugas, ID kuis, dsb.). |
+| `related_id` | `UUID`         | NULL                                                                                   | ID entitas terkait (misal: ID penilaian, ID diskusi, dsb.). |
 | `is_read`    | `BOOLEAN`      | Default FALSE                                                                          | Status baca (FALSE = belum dibaca, TRUE = sudah).    |
 | `created_at` | `TIMESTAMP`    | Default `CURRENT_TIMESTAMP`                                                            | Waktu notifikasi dibuat.                             |
 
@@ -524,37 +532,47 @@ CREATE TABLE public.modules (
     constraint modules_type_check check (type::text = any (array['video'::character varying, 'pdf'::character varying, 'link'::character varying, 'ppt'::character varying]::text[]))
 ) TABLESPACE pg_default;
 
--- 7. Pembuatan Tabel assignments
-CREATE TABLE public.assignments (
+-- 7. Pembuatan Tabel assessments
+CREATE TABLE public.assessments (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     class_id uuid NOT NULL,
     title character varying(150) NOT NULL,
     description text NOT NULL,
-    deadline timestamp without time zone NOT NULL,
+    type character varying(10) NOT NULL,
+    mode character varying(15) NOT NULL,
     weight_pct integer NOT NULL,
-    allowed_formats character varying(50)[] NOT NULL,
-    max_size_mb integer NOT NULL DEFAULT 10,
+    open_at timestamp without time zone NULL,
+    deadline timestamp without time zone NOT NULL,
+    duration_min integer NULL,
+    allowed_formats character varying(50)[] NULL,
+    max_size_mb integer NULL DEFAULT 10,
+    is_published boolean NOT NULL DEFAULT false,
     created_at timestamp without time zone NULL DEFAULT CURRENT_TIMESTAMP,
-    constraint assignments_pkey primary key (id),
-    constraint assignments_class_id_fkey foreign key (class_id) references public.classes (id) on delete cascade,
-    constraint assignments_weight_pct_check check (weight_pct >= 1 and weight_pct <= 100)
+    constraint assessments_pkey primary key (id),
+    constraint assessments_class_id_fkey foreign key (class_id) references public.classes (id) on delete cascade,
+    constraint assessments_type_check check (type::text = any (array['task'::character varying, 'uts'::character varying, 'uas'::character varying]::text[])),
+    constraint assessments_mode_check check (mode::text = any (array['file_upload'::character varying, 'online_quiz'::character varying, 'manual'::character varying]::text[])),
+    constraint assessments_weight_pct_check check (weight_pct >= 1 and weight_pct <= 100),
+    constraint assessments_duration_min_check check (duration_min > 0)
 ) TABLESPACE pg_default;
 
 -- 8. Pembuatan Tabel submissions
 CREATE TABLE public.submissions (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    assignment_id uuid NOT NULL,
+    assessment_id uuid NOT NULL,
     student_id uuid NOT NULL,
     file_url character varying(255) NOT NULL,
     submitted_at timestamp without time zone NULL DEFAULT CURRENT_TIMESTAMP,
     is_late boolean NOT NULL DEFAULT false,
     version integer NOT NULL DEFAULT 1,
+    status character varying(15) NULL,
     grade integer NULL,
     feedback text NULL,
     graded_at timestamp without time zone NULL,
     constraint submissions_pkey primary key (id),
-    constraint submissions_assignment_id_fkey foreign key (assignment_id) references public.assignments (id) on delete cascade,
+    constraint submissions_assessment_id_fkey foreign key (assessment_id) references public.assessments (id) on delete cascade,
     constraint submissions_student_id_fkey foreign key (student_id) references public.users (id) on delete cascade,
+    constraint submissions_status_check check (status::text = any (array['graded'::character varying, 'revision_requested'::character varying]::text[])),
     constraint submissions_grade_check check (grade >= 0 and grade <= 100)
 ) TABLESPACE pg_default;
 
@@ -644,32 +662,15 @@ CREATE TABLE public.grades (
     constraint grades_participation_score_check check (participation_score >= 0.0 and participation_score <= 100.0)
 ) TABLESPACE pg_default;
 
--- 15. Pembuatan Tabel quizzes
-CREATE TABLE public.quizzes (
-    id uuid NOT NULL DEFAULT gen_random_uuid(),
-    class_id uuid NOT NULL,
-    title character varying(150) NOT NULL,
-    type character varying(10) NOT NULL,
-    duration_min integer NOT NULL,
-    open_at timestamp without time zone NOT NULL,
-    close_at timestamp without time zone NOT NULL,
-    is_published boolean NOT NULL DEFAULT false,
-    created_at timestamp without time zone NULL DEFAULT CURRENT_TIMESTAMP,
-    constraint quizzes_pkey primary key (id),
-    constraint quizzes_class_id_fkey foreign key (class_id) references public.classes (id) on delete cascade,
-    constraint quizzes_type_check check (type::text = any (array['quiz'::character varying, 'uts'::character varying, 'uas'::character varying]::text[])),
-    constraint quizzes_duration_min_check check (duration_min > 0)
-) TABLESPACE pg_default;
-
 -- 16. Pembuatan Tabel questions
 CREATE TABLE public.questions (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    quiz_id uuid NOT NULL,
+    assessment_id uuid NOT NULL,
     content text NOT NULL,
     type character varying(15) NOT NULL,
     order_no integer NOT NULL,
     constraint questions_pkey primary key (id),
-    constraint questions_quiz_id_fkey foreign key (quiz_id) references public.quizzes (id) on delete cascade,
+    constraint questions_assessment_id_fkey foreign key (assessment_id) references public.assessments (id) on delete cascade,
     constraint questions_type_check check (type::text = any (array['mcq'::character varying, 'essay'::character varying, 'true_false'::character varying]::text[]))
 ) TABLESPACE pg_default;
 
@@ -685,21 +686,42 @@ CREATE TABLE public.question_options (
     constraint question_options_question_id_fkey foreign key (question_id) references public.questions (id) on delete cascade
 ) TABLESPACE pg_default;
 
--- 17. Pembuatan Tabel quiz_attempts
-CREATE TABLE public.quiz_attempts (
+-- 17. Pembuatan Tabel assessment_attempts
+CREATE TABLE public.assessment_attempts (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
-    quiz_id uuid NOT NULL,
+    assessment_id uuid NOT NULL,
     student_id uuid NOT NULL,
     started_at timestamp without time zone NULL DEFAULT CURRENT_TIMESTAMP,
     submitted_at timestamp without time zone NULL,
     score numeric(5,2) NULL,
     answers jsonb NOT NULL DEFAULT '{}'::jsonb,
     is_late boolean NOT NULL DEFAULT false,
-    constraint quiz_attempts_pkey primary key (id),
-    constraint quiz_attempts_quiz_id_fkey foreign key (quiz_id) references public.quizzes (id) on delete cascade,
-    constraint quiz_attempts_student_id_fkey foreign key (student_id) references public.users (id) on delete cascade,
-    constraint quiz_attempts_score_check check (score >= 0.0 and score <= 100.0)
+    constraint assessment_attempts_pkey primary key (id),
+    constraint assessment_attempts_assessment_id_fkey foreign key (assessment_id) references public.assessments (id) on delete cascade,
+    constraint assessment_attempts_student_id_fkey foreign key (student_id) references public.users (id) on delete cascade,
+    constraint assessment_attempts_score_check check (score >= 0.0 and score <= 100.0)
 ) TABLESPACE pg_default;
+
+-- 17b. Trigger: enforce one-time attempt untuk penilaian UTS/UAS
+CREATE OR REPLACE FUNCTION enforce_one_time_uts_uas()
+RETURNS trigger AS $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM public.assessments
+        WHERE id = NEW.assessment_id AND type IN ('uts', 'uas')
+    ) AND EXISTS (
+        SELECT 1 FROM public.assessment_attempts
+        WHERE assessment_id = NEW.assessment_id AND student_id = NEW.student_id
+    ) THEN
+        RAISE EXCEPTION 'Penilaian UTS/UAS hanya dapat dikerjakan satu kali';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_one_time_uts_uas
+BEFORE INSERT ON public.assessment_attempts
+FOR EACH ROW EXECUTE FUNCTION enforce_one_time_uts_uas();
 
 -- 18. Pembuatan Tabel notifications
 CREATE TABLE public.notifications (
@@ -733,18 +755,18 @@ create index IF not exists idx_courses_kurikulum_id on public.courses using btre
 create index IF not exists idx_classes_course_id on public.classes using btree (course_id) TABLESPACE pg_default;
 create index IF not exists idx_classes_lecturer_id on public.classes using btree (lecturer_id) TABLESPACE pg_default;
 create index IF not exists idx_modules_class_id on public.modules using btree (class_id) TABLESPACE pg_default;
-create index IF not exists idx_assignments_class_id on public.assignments using btree (class_id) TABLESPACE pg_default;
-create index IF not exists idx_submissions_assignment_id on public.submissions using btree (assignment_id) TABLESPACE pg_default;
+create index IF not exists idx_assessments_class_id on public.assessments using btree (class_id) TABLESPACE pg_default;
+create index IF not exists idx_assessments_type on public.assessments using btree (class_id, type) TABLESPACE pg_default;
+create index IF not exists idx_submissions_assessment_id on public.submissions using btree (assessment_id) TABLESPACE pg_default;
 create index IF not exists idx_submissions_student_id on public.submissions using btree (student_id) TABLESPACE pg_default;
 create index IF not exists idx_enrollments_student_id on public.enrollments using btree (student_id) TABLESPACE pg_default;
 create index IF not exists idx_enrollments_class_id on public.enrollments using btree (class_id) TABLESPACE pg_default;
 create index IF not exists idx_attendance_class_student on public.attendance using btree (class_id, student_id) TABLESPACE pg_default;
 create index IF not exists idx_grades_student_class on public.grades using btree (student_id, class_id) TABLESPACE pg_default;
-create index IF not exists idx_quizzes_class_id on public.quizzes using btree (class_id) TABLESPACE pg_default;
-create index IF not exists idx_questions_quiz_id on public.questions using btree (quiz_id) TABLESPACE pg_default;
+create index IF not exists idx_questions_assessment_id on public.questions using btree (assessment_id) TABLESPACE pg_default;
 create index IF not exists idx_question_options_question_id on public.question_options using btree (question_id) TABLESPACE pg_default;
-create index IF not exists idx_quiz_attempts_quiz_id on public.quiz_attempts using btree (quiz_id) TABLESPACE pg_default;
-create index IF not exists idx_quiz_attempts_student_id on public.quiz_attempts using btree (student_id) TABLESPACE pg_default;
+create index IF not exists idx_assessment_attempts_assessment_id on public.assessment_attempts using btree (assessment_id) TABLESPACE pg_default;
+create index IF not exists idx_assessment_attempts_student_id on public.assessment_attempts using btree (student_id) TABLESPACE pg_default;
 create index IF not exists idx_notifications_user_id on public.notifications using btree (user_id) TABLESPACE pg_default;
 create index IF not exists idx_notifications_unread on public.notifications using btree (user_id, is_read) TABLESPACE pg_default where is_read = false;
 create index IF not exists idx_discussions_class_id on public.discussions using btree (class_id) TABLESPACE pg_default;
@@ -853,19 +875,19 @@ CREATE POLICY "Students can read published modules of enrolled classes" ON publi
 CREATE POLICY "Lecturer and Admin can manage modules" ON public.modules
     FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
 
--- 8. RLS untuk Tabel assignments
-ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
+-- 8. RLS untuk Tabel assessments
+ALTER TABLE public.assessments ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students can read assignments of enrolled classes" ON public.assignments
+CREATE POLICY "Students can read published assessments of enrolled classes" ON public.assessments
     FOR SELECT TO public USING (
-        EXISTS (
+        (is_published = true AND EXISTS (
             SELECT 1 FROM public.enrollments 
-            WHERE enrollments.class_id = assignments.class_id 
+            WHERE enrollments.class_id = assessments.class_id 
             AND enrollments.student_id = auth.uid()
-        ) OR public.is_dosen() OR public.is_admin()
+        )) OR public.is_dosen() OR public.is_admin()
     );
 
-CREATE POLICY "Lecturer and Admin can manage assignments" ON public.assignments
+CREATE POLICY "Lecturer and Admin can manage assessments" ON public.assessments
     FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
 
 -- 9. RLS untuk Tabel submissions
@@ -943,30 +965,17 @@ CREATE POLICY "Students can read own grades" ON public.grades
 CREATE POLICY "Lecturer and Admin can manage grades" ON public.grades
     FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
 
--- 16. RLS untuk Tabel quizzes
-ALTER TABLE public.quizzes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Students can read published quizzes of enrolled classes" ON public.quizzes
-    FOR SELECT TO public USING (
-        (is_published = true AND EXISTS (
-            SELECT 1 FROM public.enrollments 
-            WHERE enrollments.class_id = quizzes.class_id 
-            AND enrollments.student_id = auth.uid()
-        )) OR public.is_dosen() OR public.is_admin());
-
-CREATE POLICY "Lecturer and Admin can manage quizzes" ON public.quizzes
-    FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
-
 -- 17. RLS untuk Tabel questions
 ALTER TABLE public.questions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students can read questions of open quizzes" ON public.questions
+CREATE POLICY "Students can read questions of published online assessments" ON public.questions
     FOR SELECT TO public USING (
         EXISTS (
-            SELECT 1 FROM public.quizzes
-            JOIN public.enrollments ON enrollments.class_id = quizzes.class_id
-            WHERE quizzes.id = questions.quiz_id
-            AND quizzes.is_published = true
+            SELECT 1 FROM public.assessments
+            JOIN public.enrollments ON enrollments.class_id = assessments.class_id
+            WHERE assessments.id = questions.assessment_id
+            AND assessments.mode = 'online_quiz'
+            AND assessments.is_published = true
             AND enrollments.student_id = auth.uid()
         ) OR public.is_dosen() OR public.is_admin()
     );
@@ -977,14 +986,15 @@ CREATE POLICY "Lecturer and Admin can manage questions" ON public.questions
 -- 18. RLS untuk Tabel question_options
 ALTER TABLE public.question_options ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students can read options of open quizzes" ON public.question_options
+CREATE POLICY "Students can read options of published online assessments" ON public.question_options
     FOR SELECT TO public USING (
         EXISTS (
             SELECT 1 FROM public.questions
-            JOIN public.quizzes ON quizzes.id = questions.quiz_id
-            JOIN public.enrollments ON enrollments.class_id = quizzes.class_id
+            JOIN public.assessments ON assessments.id = questions.assessment_id
+            JOIN public.enrollments ON enrollments.class_id = assessments.class_id
             WHERE questions.id = question_options.question_id
-            AND quizzes.is_published = true
+            AND assessments.mode = 'online_quiz'
+            AND assessments.is_published = true
             AND enrollments.student_id = auth.uid()
         ) OR public.is_dosen() OR public.is_admin()
     );
@@ -992,19 +1002,19 @@ CREATE POLICY "Students can read options of open quizzes" ON public.question_opt
 CREATE POLICY "Lecturer and Admin can manage question_options" ON public.question_options
     FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
 
--- 19. RLS untuk Tabel quiz_attempts
-ALTER TABLE public.quiz_attempts ENABLE ROW LEVEL SECURITY;
+-- 19. RLS untuk Tabel assessment_attempts
+ALTER TABLE public.assessment_attempts ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Students can view own attempts" ON public.quiz_attempts
+CREATE POLICY "Students can view own attempts" ON public.assessment_attempts
     FOR SELECT TO public USING (auth.uid() = student_id OR public.is_dosen() OR public.is_admin());
 
-CREATE POLICY "Students can insert own attempts" ON public.quiz_attempts
+CREATE POLICY "Students can insert own attempts" ON public.assessment_attempts
     FOR INSERT TO public WITH CHECK (auth.uid() = student_id);
 
-CREATE POLICY "Students can update own attempts" ON public.quiz_attempts
+CREATE POLICY "Students can update own attempts" ON public.assessment_attempts
     FOR UPDATE TO public USING (auth.uid() = student_id) WITH CHECK (auth.uid() = student_id);
 
-CREATE POLICY "Lecturer and Admin can grade attempts" ON public.quiz_attempts
+CREATE POLICY "Lecturer and Admin can grade attempts" ON public.assessment_attempts
     FOR ALL TO public USING (public.is_dosen() OR public.is_admin());
 
 -- 20. RLS untuk Tabel notifications
@@ -1159,6 +1169,34 @@ ON CONFLICT (id) DO NOTHING;
 -- Input Modul / Materi Awal
 INSERT INTO public.modules (class_id, title, week_no, type, content_url, description) VALUES
 ('f4e3d2c1-8888-9999-0000-111122223333', 'Pengenalan Web Modern & HTML5', 1, 'pdf', 'https://example.com/pdf/html5-intro.pdf', 'Dasar arsitektur web dan penggunaan elemen semantik baru pada spesifikasi HTML5.')
+ON CONFLICT (id) DO NOTHING;
+
+-- Input Penilaian (contoh model fleksibel: task online_quiz, uts online_quiz, uas file_upload)
+INSERT INTO public.assessments (id, class_id, title, description, type, mode, weight_pct, open_at, deadline, duration_min, is_published) VALUES
+('a1111111-1111-1111-1111-111111111111', 'f4e3d2c1-8888-9999-0000-111122223333', 'Tugas 1: Landing Page', 'Buat landing page responsif sesuai rubrik.', 'task', 'online_quiz', 20, '2026-09-01 08:00:00', '2026-09-07 23:59:00', 60, TRUE),
+('a2222222-2222-2222-2222-222222222222', 'f4e3d2c1-8888-9999-0000-111122223333', 'UTS Pemrograman Web', 'UTS pilihan ganda & esai.', 'uts', 'online_quiz', 25, '2026-10-15 08:00:00', '2026-10-15 10:00:00', 120, TRUE),
+('a3333333-3333-3333-3333-333333333333', 'f4e3d2c1-8888-9999-0000-111122223333', 'UAS Project Web', 'Kumpulkan hasil project web.', 'uas', 'file_upload', 35, '2026-12-20 08:00:00', '2026-12-27 23:59:00', NULL, TRUE)
+ON CONFLICT (id) DO NOTHING;
+
+-- Input Soal untuk penilaian mode online_quiz (Tugas 1)
+INSERT INTO public.questions (id, assessment_id, content, type, order_no) VALUES
+('q1111111-1111-1111-1111-111111111111', 'a1111111-1111-1111-1111-111111111111', 'Apa kepanjangan HTML?', 'mcq', 1),
+('q2222222-2222-2222-2222-222222222222', 'a1111111-1111-1111-1111-111111111111', 'Jelaskan perbedaan tag div dan span!', 'essay', 2)
+ON CONFLICT (id) DO NOTHING;
+
+-- Input Pilihan Jawaban MCQ
+INSERT INTO public.question_options (question_id, option_text, is_correct) VALUES
+('q1111111-1111-1111-1111-111111111111', 'HyperText Markup Language', TRUE),
+('q1111111-1111-1111-1111-111111111111', 'HyperText Machine Language', FALSE);
+
+-- Input Attempt UTS (one-time attempt) 
+INSERT INTO public.assessment_attempts (id, assessment_id, student_id, started_at, submitted_at, score, answers) VALUES
+('aa111111-1111-1111-1111-111111111111', 'a2222222-2222-2222-2222-222222222222', '212dc83a-5159-430d-8f82-a2599db61181', '2026-10-15 08:02:00', '2026-10-15 09:50:00', 88.00, '{"q1":"A","q2":"..."}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
+
+-- Input Pengumpulan UAS (mode file_upload)
+INSERT INTO public.submissions (id, assessment_id, student_id, file_url, submitted_at, is_late, version, status, grade) VALUES
+('s1111111-1111-1111-1111-111111111111', 'a3333333-3333-3333-3333-333333333333', '212dc83a-5159-430d-8f82-a2599db61181', 'uploads/uas-project.zip', '2026-12-25 10:00:00', FALSE, 1, 'graded', 90)
 ON CONFLICT (id) DO NOTHING;
 
 -- Input Presensi Awal Mahasiswa

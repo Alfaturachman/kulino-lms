@@ -1,8 +1,8 @@
 # Dokumentasi API & Routing (API & Route Specification)
 
 **Sistem:** KULINO — Kuliah Online | Learning Management System  
-**Versi Dokumen:** 1.1  
-**Status:** Terverifikasi & Siap Produksi
+**Versi Dokumen:** 1.2  
+**Status:** Terverifikasi, Tersinkronisasi & Siap Produksi
 
 Dokumen ini mendeskripsikan seluruh rute antarmuka (Frontend Routes), Next.js API Route Handlers, serta Server Actions yang tersedia dalam KULINO LMS.
 
@@ -10,37 +10,46 @@ Dokumen ini mendeskripsikan seluruh rute antarmuka (Frontend Routes), Next.js AP
 
 ## 1. Arsitektur Rute Aplikasi (Route Map)
 
+Arsitektur rute KULINO LMS menggunakan Next.js 16 App Router. Untuk memberikan pengalaman antarmuka yang cepat dan responsif (Soft SaaS SPA feel), sebagian besar fungsionalitas sub-modul (seperti manajemen pengguna, kalender, laporan, viewer materi, dan pengumpulan tugas) diimplementasikan menggunakan **Sub-component Tabs & Dialog Modals** pada rute utama.
+
 ### 1.1 Rute Publik (Public Routes)
-- `/`: Landing Page utama platform (Branding, fitur unggulan, testimoni, CTA login/register).
-- `/login`: Form autentikasi pengguna dengan pengalihan peran otomatis berdasarkan metadata JWT.
-- `/register`: Form pendaftaran mandiri calon mahasiswa.
-- `/courses`: Katalog publik mata kuliah yang ditawarkan (Filter status aktif/selesai).
-- `/demo`: Demo interaktif antarmuka platform.
+- `/`: Landing Page utama platform (Branding, fitur unggulan, testimoni, CTA login). `[Aktif]`
+- `/login`: Form autentikasi pengguna dengan pengalihan peran otomatis berdasarkan metadata JWT. `[Aktif]`
+- `/courses`: Katalog publik mata kuliah yang ditawarkan (Filter status aktif/selesai & pencarian). `[Aktif]`
+- `/register`: *(Roadmap v1.3)* Form pendaftaran mandiri (saat ini ditangani via Admin/TU atau form login/signup).
+- `/demo`: *(Roadmap v1.3)* Demo interaktif antarmuka platform.
 
 ### 1.2 Rute Terproteksi (Protected Routes)
 
 #### Student Routes (`/dashboard/*`)
-- `/dashboard`: Halaman utama Mahasiswa (Ringkasan KRS, IPK tracker, tugas tenggat, visual kalender).
-- `/dashboard/course/[id]`: Detail kelas Mahasiswa (Accordion minggu 1-14, simulator unggah tugas, forum diskusi).
-- `/dashboard/course/[id]/material/[mid]`: Material Viewer (YouTube embed video & PDF document viewer).
-- `/dashboard/course/[id]/assignment/[aid]`: Halaman pengumpulan tugas & riwayat revisi file.
-- `/dashboard/course/[id]/quiz/[qid]`: CBT Quiz/Exam Module (Countdown timer & autograding).
+- `/dashboard`: Halaman utama Mahasiswa (Ringkasan KRS, IPK tracker, tugas tenggat, visual kalender). `[Aktif]`
+- `/dashboard/course/[id]`: Detail kelas Mahasiswa `[Aktif]`. Mengintegrasikan:
+  - Sub-view Accordion minggu 1–16 & Material Viewer (YouTube embed video & PDF viewer).
+  - Sub-view Assessment & Upload submission tugas.
+  - Sub-view CBT Online Quiz simulator attempt (Countdown timer, autograding).
+  - Sub-view Forum diskusi kelas real-time.
 
 #### Lecturer Routes (`/lecturer/*`)
-- `/lecturer`: Halaman utama Dosen (Daftar kelas diampu, antrean koreksi tugas, pengumuman kelas).
-- `/lecturer/course/[id]`: Manajemen kelas Dosen (Tambah materi, buat tugas, manajemen presensi).
-- `/lecturer/course/[id]/grade`: Grading Panel (Koreksi nilai tugas & masukan umpan balik).
+- `/lecturer`: Halaman utama Dosen (Daftar kelas diampu, antrean koreksi tugas, pengumuman kelas). `[Aktif]`
+- `/lecturer/course/[id]`: Detail & Manajemen kelas Dosen `[Aktif]`. Mengintegrasikan:
+  - Sub-view Manajemen materi mingguan.
+  - Sub-view Buat tugas/kuis baru dengan bobot & mode penilaian.
+  - Sub-view Grading Panel (Koreksi nilai tugas, masukan umpan balik, & rekapan nilai).
 
 #### Staff TU Routes (`/staff/*`)
-- `/staff`: Halaman utama Staff TU (CRUD Kelas, penawaran mata kuliah).
-- `/staff/courses`: Manajemen master mata kuliah dan alokasi dosen pengampu.
-- `/staff/users`: Modul registrasi akun massal via Bulk CSV Import dengan visual progress bar.
+- `/staff`: Halaman utama Staff TU (`StaffDashboardClient.tsx`) `[Aktif]`. Mengintegrasikan:
+  - Tab CRUD Kelas & penawaran mata kuliah per semester.
+  - Tab Manajemen pendaftaran mahasiswa per kelas.
+  - Tab Simulator Bulk CSV Import registrasi akun massal dengan visual progress bar.
 
 #### Admin Routes (`/admin/*`)
-- `/admin`: Halaman utama Super Admin.
-- `/admin/users`: Management pengguna (CRUD User, reset password terenkripsi via Supabase Auth Admin API).
-- `/admin/calendar`: Manajemen agenda kalender akademik universitas.
-- `/admin/reports`: Generator & ekspor laporan gradebook serta audit logs.
+- `/admin`: Halaman utama Super Admin (`AdminDashboardClient.tsx`) `[Aktif]`. Mengintegrasikan:
+  - Tab `OverviewTab`: Ringkasan statistik & monitoring Jejak Audit (Audit Logs) dengan paginasi interaktif.
+  - Tab `UsersTab`: Management pengguna (CRUD User & Reset Password) dengan paginasi 10 data per halaman.
+  - Tab `CoursesTab`: Master data mata kuliah & pengalokasian dosen.
+  - Tab `CalendarTab`: Manajemen agenda kalender akademik universitas.
+  - Tab `ReportsTab`: Generator & ekspor laporan gradebook.
+  - Tab `SettingsTab`: Pengaturan sistem dasar.
 
 ---
 

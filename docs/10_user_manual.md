@@ -20,18 +20,19 @@ Dokumen ini berisi panduan teknis penggunaan platform KULINO LMS untuk empat akt
    - Widget tenggat waktu tugas terdekat (*Upcoming Deadlines*).
    - Visual kalender akademik mingguan.
 
-### 1.2 Mengakses Materi & Mengirim Tugas
+### 1.2 Mengakses Materi & Mengirim Penilaian (Tugas / UTS / UAS)
 1. Klik salah satu kartu mata kuliah untuk masuk ke halaman detail `/dashboard/course/[id]`.
 2. Buka tab **Materi** untuk melihat silabus dan materi mingguan (pertemuan 1 s.d. 16).
-3. Buka tab **Tugas** untuk melihat instruksi penugasan dari dosen.
-4. Klik tombol **Submit Tugas**, pilih file jawaban (format PDF/ZIP max 10MB), lalu konfirmasi pengiriman.
-5. Jika tugas dikirim melewati batas tenggat waktu, sistem akan mencatat timestamp pengumpulan dan memberikan badge **Terlambat**.
+3. Buka tab **Penilaian** untuk melihat daftar tugas/UTS/UAS dari dosen beserta mode pengerjaannya (unggah file / online quiz / manual).
+4. Klik tombol **Submit**, pilih file jawaban (format PDF/ZIP max 10MB), lalu konfirmasi pengiriman.
+5. Jika pengumpulan melewati batas tenggat waktu, sistem akan mencatat timestamp pengumpulan dan memberikan badge **Terlambat**.
 
-### 1.3 Mengerjakan Kuis & CBT (Computer-Based Test)
-1. Buka tab **Kuis / Ujian** pada detail mata kuliah.
-2. Klik **Mulai Kuis** saat window waktu kuis telah dibuka oleh dosen.
+### 1.3 Mengerjakan Penilaian Online (CBT / Online Quiz)
+1. Buka tab **Penilaian** pada detail mata kuliah, lalu pilih penilaian dengan mode **Online Quiz**.
+2. Klik **Mulai Kuis** saat window waktu pengerjaan telah dibuka oleh dosen.
 3. Kerjakan soal pilihan ganda atau esai. Perhatikan countdown timer di bagian atas layar.
 4. Jawaban akan disimpan secara otomatis. Jika waktu habis, sistem akan melakukan *auto-submit* jawaban yang telah terisi.
+5. Penilaian UTS/UAS hanya dapat dikerjakan **satu kali**; pastikan koneksi stabil sebelum memulai.
 
 ---
 
@@ -43,10 +44,10 @@ Dokumen ini berisi panduan teknis penggunaan platform KULINO LMS untuk empat akt
 3. Klik **Tambah Materi Baru**, isi judul, minggu pertemuan (1 s.d. 16), tipe (PDF/Video YouTube/Link), dan upload file/URL.
 4. Gunakan form **Pengumuman Kelas** untuk menyiarkan pesan penting ke seluruh mahasiswa di kelas tersebut.
 
-### 2.2 Penilaian Tugas Mahasiswa (*Grading*)
-1. Pada halaman detail kelas, buka tab **Penilaian Tugas**.
-2. Sistem akan menampilkan daftar pengumpulan tugas mahasiswa beserta indikator keterlambatan (badge merah jika terlambat).
-3. Unduh berkas tugas mahasiswa, masukkan nilai angka (0–100) dan umpan balik (*feedback*) teks.
+### 2.2 Penilaian Mahasiswa (*Grading*)
+1. Pada halaman detail kelas, buka tab **Penilaian**.
+2. Sistem akan menampilkan daftar pengumpulan mahasiswa (mode file_upload) beserta hasil online quiz (mode online_quiz) dan indikator keterlambatan (badge merah jika terlambat).
+3. Unduh berkas mahasiswa, masukkan nilai angka (0–100) dan umpan balik (*feedback*) teks.
 4. Klik **Simpan Nilai** untuk memperbarui gradebook mahasiswa secara real-time.
 
 ### 2.3 Mengelola Presensi Kehadiran Mahasiswa
@@ -65,7 +66,7 @@ Dokumen ini berisi panduan teknis penggunaan platform KULINO LMS untuk empat akt
 3. Gunakan modul **Enrollment** untuk memasukkan mahasiswa ke dalam kelas aktif.
 
 ### 3.2 Registrasi Akun Massal (*Bulk CSV Import*)
-1. Pilih menu **Import Mahasiswa (CSV)** pada dashboard staff.
+1. Pilih menu **Import Mahasiswa (CSV)** pada dashboard TU.
 2. Upload file `.csv` dengan format kolom: `name,email,nim_nip,role`.
 3. Klik **Mulai Import**. Sistem akan menampilkan progress bar pengolahan baris secara real-time dan mendaftarkan akun baru ke Supabase Auth.
 
@@ -90,7 +91,7 @@ Dokumen ini berisi panduan teknis penggunaan platform KULINO LMS untuk empat akt
 ### 5.1 Pertanyaan Sering Diajukan (FAQ)
 - **Gagal Login**: Pastikan email dan kata sandi benar. Jika lupa password, hubungi Admin/TU untuk reset password.
 - **File Upload Ditolak**: Pastikan ukuran file di bawah 10MB dan ekstensi file sesuai yang diizinkan (PDF/ZIP/DOCX).
-- **Kuis Tidak Dapat Dibuka**: Kuis hanya dapat diakses dalam rentang waktu `open_at` dan `close_at` yang telah ditentukan dosen.
+- **Penilaian Online Tidak Dapat Dibuka**: Penilaian mode `online_quiz` hanya dapat diakses dalam rentang waktu `open_at` dan `deadline` yang telah ditentukan dosen.
 - **Progress Belajar Tidak Bertambah**: Selesaikan modul dan kumpulkan tugas mingguan agar persentase progres bertambah.
 
 ### 5.2 Kontak Layanan Bantuan

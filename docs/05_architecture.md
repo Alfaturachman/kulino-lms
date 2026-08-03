@@ -51,8 +51,10 @@ Database PostgreSQL pada Supabase dirancang untuk menangani beban konkurensi tin
 - `idx_classes_course_id` & `idx_classes_lecturer_id` pada tabel `classes`.
 - `idx_enrollments_student_id` & `idx_enrollments_class_id` pada tabel `enrollments`.
 - `idx_modules_class_id` pada tabel `modules`.
-- `idx_assignments_class_id` pada tabel `assignments`.
-- `idx_submissions_assignment_id` & `idx_submissions_student_id` pada tabel `submissions`.
+- `idx_assessments_class_id` & `idx_assessments_type` pada tabel `assessments`.
+- `idx_submissions_assessment_id` & `idx_submissions_student_id` pada tabel `submissions`.
+- `idx_questions_assessment_id` pada tabel `questions`.
+- `idx_assessment_attempts_assessment_id` & `idx_assessment_attempts_student_id` pada tabel `assessment_attempts`.
 - `idx_announcements_class_id` pada tabel `announcements`.
 - `idx_attendance_student_id` pada tabel `attendance`.
 - `idx_calendar_events_class_id` pada tabel `calendar_events`.

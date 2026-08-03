@@ -1,11 +1,11 @@
-export type Role = 'guest' | 'mahasiswa' | 'dosen' | 'tu' | 'admin';
+export type Role = 'mahasiswa' | 'dosen' | 'tu' | 'admin';
 
 export interface User {
     id: string;
     name: string;
     email: string;
     role: Role;
-    nim_nip?: string;
+    nim_nip: string;
     photo_url?: string;
     phone?: string;
 }

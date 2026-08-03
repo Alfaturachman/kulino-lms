@@ -2,20 +2,17 @@
 
 ## KULINO — Rencana & Hasil Pengujian Sistem
 
-**Versi:** 1.1 | **Tipe:** QA Document | **Status:** Active (100% Passed)
-**Tanggal:** Juni 2026 / Agustus 2026
+**Versi:** 1.2 | **Tipe:** QA Document | **Status:** Active (100% Passed)
+**Tanggal:** 3 Agustus 2026
 
 ---
 
 ## 1. Ruang Lingkup Pengujian
 
-Dokumen ini mencakup rencana dan hasil pengujian untuk **KULINO LMS** — meliputi seluruh alur fungsional utama yang telah diimplementasikan pada fase frontend simulation dan integrasi Supabase. Pengujian berfokus pada:
+Dokumen ini mencakup rencana dan hasil pengujian untuk **KULINO LMS** — meliputi seluruh alur fungsional utama yang telah diimplementasikan pada fase frontend simulation dan integrasi Supabase. Pengujian dibedakan secara tegas menjadi dua kategori:
 
-- **Functional Testing** — Apakah fitur berjalan sesuai acceptance criteria di PRD/FRD
-- **Automated Unit Testing** — Pengujian komponen React & handler dengan Vitest
-- **UI/UX Testing** — Apakah tampilan konsisten dengan Design System
-- **Role-Based Access Testing** — Apakah setiap role hanya bisa mengakses halaman yang diizinkan
-- **Responsive Testing** — Apakah layout berfungsi di berbagai ukuran layar
+1. **Automated Unit Testing (Vitest & RTL)**: Pengujian unit komponen antarmuka otomatis yang dijalankan dalam pipeline CI/CD (`components/admin/__tests__/CoursesTab.test.tsx`).
+2. **Manual QA Scenario Testing**: Matriks skenario uji fungsional, otentikasi, perizinan rute (RBAC), dan formulir yang diverifikasi secara eksploratif melalui peramban.
 
 ---
 
@@ -50,7 +47,7 @@ Pengujian unit otomatisasi berjalan sukses dengan status **100% Passed (8/8 Test
 
 ---
 
-## 4. Test Cases — Modul Autentikasi
+## 4. Manual QA Test Cases — Modul Autentikasi (Skenario Manual)
 
 ### TC-AUTH-01 — Login berhasil sebagai Mahasiswa
 
@@ -155,7 +152,9 @@ Pengujian unit otomatisasi berjalan sukses dengan status **100% Passed (8/8 Test
 
 ---
 
-## 6. Test Cases — Modul Assignment & Submission
+## 6. Test Cases — Modul Penilaian (Assessment)
+
+Penilaian (tugas/UTS/UAS) mendukung mode `file_upload`, `online_quiz`, dan `manual`. Test case di bawah mencakup mode `file_upload` (pengumpulan) dan `online_quiz` (CBT).
 
 ### TC-ASSIGN-01 — Mahasiswa submit tugas sebelum deadline
 
@@ -196,6 +195,30 @@ Pengujian unit otomatisasi berjalan sukses dengan status **100% Passed (8/8 Test
 | **Steps**    | Login dosen → Buka submission mahasiswa → Input nilai (0–100) + feedback → Save |
 | **Expected** | Nilai tersimpan dan muncul di halaman nilai mahasiswa                           |
 | **Status**   | ✅ Pass                                                                         |
+
+### TC-QUIZ-01 — Mahasiswa mengerjakan penilaian online (mode online_quiz)
+
+| Field        | Detail                                                                        |
+| ------------ | ----------------------------------------------------------------------------- |
+| **Steps**    | Buka `/assessment/[aid]/attempt` saat `open_at` → kerjakan MCQ/esai → submit  |
+| **Expected** | Nilai MCQ/true-false dihitung otomatis, esai masuk antrean koreksi dosen      |
+| **Status**   | ✅ Pass                                                                       |
+
+### TC-QUIZ-02 — Auto-submit saat waktu habis
+
+| Field        | Detail                                                                 |
+| ------------ | ---------------------------------------------------------------------- |
+| **Steps**    | Biarkan countdown timer habis saat mengerjakan online quiz              |
+| **Expected** | Sistem auto-submit jawaban yang sudah terisi, attempt dikunci           |
+| **Status**   | ✅ Pass                                                                |
+
+### TC-QUIZ-03 — UTS/UAS one-time attempt
+
+| Field        | Detail                                                                             |
+| ------------ | ---------------------------------------------------------------------------------- |
+| **Steps**    | Mahasiswa yang sudah submit UTS/UAS mencoba masuk attempt lagi                      |
+| **Expected** | Ditolak (trigger `enforce_one_time_uts_uas`), muncul pesan "hanya dapat dikerjakan satu kali" |
+| **Status**   | ✅ Pass                                                                            |
 
 ---
 

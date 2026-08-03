@@ -314,11 +314,11 @@ Menggunakan **Lucide React** sebagai icon library utama.
 ┌───────────────────────────────────────────────┐
 │  Course Header: Nama MK, Kelas, Semester       │
 ├────────────────┬──────────────────────────────┤
-│ Info Panel     │  Tab: Materi / Tugas / Forum  │
+│ Info Panel     │  Tab: Materi / Penilaian / Forum  │
 │ - Kontrak      │  ─────────────────────────── │
 │ - Dosen        │  Week Timeline (accordion)   │
 │ - Komting      │  ─────────────────────────── │
-│ - RPS PDF      │  Module / Assignment List    │
+│ - RPS PDF      │  Module / Assessment List    │
 │ - Zoom Link    │                              │
 └────────────────┴──────────────────────────────┘
 ```

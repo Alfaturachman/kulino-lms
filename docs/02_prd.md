@@ -2,7 +2,7 @@
 
 ## KULINO — Product Definition
 
-**Versi:** 1.0 | **Tipe:** Frontend Prototype | **Status:** In Progress
+**Versi:** 1.2 | **Tipe:** Engineering Doc | **Status:** Approved (Tersinkronisasi)
 
 ---
 
@@ -21,7 +21,7 @@ Unlike platform umum seperti Google Classroom yang bersifat generik, KULINO dira
 - Login & akses dashboard
 - Lihat daftar mata kuliah aktif
 - Buka materi mingguan (video, PDF, link)
-- Submit tugas & ikuti quiz
+- Submit penilaian (tugas/UTS/UAS) & ikuti online quiz
 - Lihat nilai & progress belajar
 - Partisipasi di forum diskusi kelas
 - Terima notifikasi deadline
@@ -29,7 +29,7 @@ Unlike platform umum seperti Google Classroom yang bersifat generik, KULINO dira
 ### Dosen Pengampu
 
 - Upload materi per minggu
-- Buat tugas & quiz
+- Buat penilaian (tugas/UTS/UAS) dengan mode file_upload / online_quiz / manual
 - Atur deadline & bobot penilaian
 - Review & grade submission mahasiswa
 - Monitor absensi & keaktifan
@@ -50,12 +50,12 @@ Unlike platform umum seperti Google Classroom yang bersifat generik, KULINO dira
 - Kelola kalender akademik
 - Generate laporan akademik
 
-### Guest / Tamu
+### Pengunjung / Tamu (Anonim — tanpa login)
 
 - Lihat landing page platform
 - Jelajahi katalog course (terbatas)
 - Preview demo materi
-- Registrasi akun baru
+- Registrasi akun baru (hasil: role Mahasiswa)
 
 ---
 
@@ -67,8 +67,8 @@ Unlike platform umum seperti Google Classroom yang bersifat generik, KULINO dira
 | Course Dashboard    | Daftar mata kuliah + overview            | Mahasiswa        | Phase 1 | P0       |
 | Course Detail Page  | Kontrak kuliah, RPS, materi mingguan     | Mahasiswa, Dosen | Phase 1 | P0       |
 | Material Viewer     | Embed YouTube, PDF, PPT preview          | Mahasiswa        | Phase 1 | P0       |
-| Assignment System   | Buat, submit, grade tugas                | Mahasiswa, Dosen | Phase 2 | P1       |
-| Quiz / Ujian        | MCQ, essay, waktu terbatas               | Mahasiswa, Dosen | Phase 2 | P1       |
+| Assessment System   | Buat (file_upload/online_quiz/manual), submit, grade      | Mahasiswa, Dosen | Phase 2 | P1       |
+| Online Quiz / Ujian  | MCQ, essay, waktu terbatas, auto-submit                  | Mahasiswa, Dosen | Phase 2 | P1       |
 | Forum Diskusi       | Thread per kelas, reply, upvote          | Mahasiswa, Dosen | Phase 2 | P1       |
 | Announcement        | Broadcast ke kelas, pin penting          | Dosen, Admin     | Phase 2 | P1       |
 | Notification Center | Bell icon, deadline alerts, unread badge | All              | Phase 3 | P2       |
@@ -155,9 +155,52 @@ Unlike platform umum seperti Google Classroom yang bersifat generik, KULINO dira
 
 ### Alur Semester
 
+Standar: **14 minggu materi + 1 UTS + 1 UAS = 16 slot** (selaras dengan `week_no` 1–16 pada SRS/DB).
+
 | Periode   | Kegiatan                               |
 | --------- | -------------------------------------- |
 | Week 1–7  | Materi pembelajaran + Tugas (optional) |
 | Week 8    | UTS (Ujian Tengah Semester)            |
-| Week 9–14 | Materi pembelajaran + Tugas (optional) |
-| Week 15   | UAS (Ujian Akhir Semester)             |
+| Week 9–15 | Materi pembelajaran + Tugas (optional) |
+| Week 16   | UAS (Ujian Akhir Semester)             |
+
+---
+
+## 6. Inventarisasi Fitur KULINO LMS (Status Implementsi)
+
+### 6.1 Matriks Fitur Aktif (Existing & Live/Mock Active)
+
+| Modul | Fitur | Status Implementasi | Lokasi Kode Utama |
+| :--- | :--- | :--- | :--- |
+| **Auth & Security** | Form Login dengan Zod & RBAC Redirect | ✅ Aktif (Live Supabase + Mock) | [login-form.tsx](file:///d:/projects/learning-management-system/components/login-form.tsx), [store/auth.ts](file:///d:/projects/learning-management-system/store/auth.ts) |
+| **Auth & Security** | Middleware Proteksi Rute JWT & Role Check | ✅ Aktif | [proxy.ts](file:///d:/projects/learning-management-system/proxy.ts), [middleware.ts](file:///d:/projects/learning-management-system/lib/supabase/middleware.ts) |
+| **Auth & Security** | Server Actions `createUserInAuth` & `updateUserPassword` | ✅ Aktif | [actions.ts](file:///d:/projects/learning-management-system/app/%28protected%29/admin/actions.ts) |
+| **Publik** | Landing Page responsif (Hero, Testimonials, FAQ) | ✅ Aktif | [app/page.tsx](file:///d:/projects/learning-management-system/app/page.tsx) |
+| **Publik** | Katalog Publik Mata Kuliah + Filter Search | ✅ Aktif | [app/courses/page.tsx](file:///d:/projects/learning-management-system/app/courses/page.tsx) |
+| **Mahasiswa** | Student Dashboard (KRS, IPK, Kalender, Tugas) | ✅ Aktif | [StudentDashboardClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/dashboard/StudentDashboardClient.tsx) |
+| **Mahasiswa** | Class Detail (Accordion Minggu 1-16, Video/PDF Viewer) | ✅ Aktif | [CourseDetailClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/dashboard/course/%5Bid%5D/CourseDetailClient.tsx) |
+| **Mahasiswa** | Task Submission & CBT Quiz Simulator | ✅ Aktif | [CourseDetailClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/dashboard/course/%5Bid%5D/CourseDetailClient.tsx) |
+| **Mahasiswa** | Forum Diskusi Kelas Real-time | ✅ Aktif | [CourseDetailClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/dashboard/course/%5Bid%5D/CourseDetailClient.tsx) |
+| **Dosen** | Lecturer Dashboard (Queue Koreksi & Pengumuman) | ✅ Aktif | [LecturerDashboardClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/lecturer/LecturerDashboardClient.tsx) |
+| **Dosen** | Lecturer Class Detail (Materi & Assessment Creator) | ✅ Aktif | [LecturerCourseDetailClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/lecturer/course/%5Bid%5D/LecturerCourseDetailClient.tsx) |
+| **Dosen** | Grading Panel & Umpan Balik Submission | ✅ Aktif | [LecturerCourseDetailClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/lecturer/course/%5Bid%5D/LecturerCourseDetailClient.tsx) |
+| **Staff TU** | Staff Dashboard (CRUD Kelas & Enroll Mahasiswa) | ✅ Aktif | [StaffDashboardClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/staff/StaffDashboardClient.tsx) |
+| **Staff TU** | Simulator Bulk CSV Import Registrasi Massal | ✅ Aktif | [StaffDashboardClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/staff/StaffDashboardClient.tsx) |
+| **Admin** | Admin Dashboard (Overview, Users, Courses, Calendar, Reports) | ✅ Aktif | [AdminDashboardClient.tsx](file:///d:/projects/learning-management-system/app/%28protected%29/admin/AdminDashboardClient.tsx), [components/admin](file:///d:/projects/learning-management-system/components/admin) |
+| **Admin** | User Management (CRUD & Reset Password) | ✅ Aktif | [UsersTab.tsx](file:///d:/projects/learning-management-system/components/admin/UsersTab.tsx) |
+| **Admin** | Monitoring Jejak Audit (Audit Logs) | ✅ Aktif | [OverviewTab.tsx](file:///d:/projects/learning-management-system/components/admin/OverviewTab.tsx) |
+| **QA & Infra** | Unit Testing Vitest Komponen UI Admin | ✅ Aktif | [CoursesTab.test.tsx](file:///d:/projects/learning-management-system/components/admin/__tests__/CoursesTab.test.tsx) |
+| **QA & Infra** | Multi-stage Dockerfile & GitHub Actions CI/CD | ✅ Aktif | [Dockerfile](file:///d:/projects/learning-management-system/Dockerfile), [.github/workflows/ci-cd.yml](file:///d:/projects/learning-management-system/.github/workflows/ci-cd.yml) |
+
+### 6.2 Matriks Kebijakan Registrasi Akun (Strict Provisioning Policy)
+
+> [!IMPORTANT]
+> **Kebijakan Pendaftaran Terpusat (Centralized Account Provisioning):**
+> Tidak ada fitur pendaftaran mandiri (self-registration) untuk Mahasiswa atau Dosen. Seluruh akun pengguna dibuat dan diotorisasi secara terpusat melalui **Super Admin** (Single Account Registration / User Management) atau **Staff TU** (Simulator Bulk CSV Import).
+
+| Fitur | Deskripsi | Target Rilis | Status Saat Ini |
+| :--- | :--- | :--- | :--- |
+| **Interactive Demo Page (`/demo`)** | Showcase demo interaktif antarmuka publik | Roadmap v1.3 | Belum diimplementasikan |
+| **Web Push Notifications** | Push notification browser untuk pengingat tugas & pengumuman | Roadmap v1.3 | Mock notification state |
+| **Multi-Tenant University Support** | Pengelompokan data multi-fakultas/universitas | Roadmap v1.4 | Single institution |
+
